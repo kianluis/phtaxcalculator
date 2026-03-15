@@ -14,7 +14,7 @@
   --text-3:  #6b7280;
   --text-4:  #9ca3af;
 
-  --accent:  #111827;
+  --accent:  #2563eb;
   --green:   #047857;
   --red:     #b91c1c;
   --blue:    #1d4ed8;
@@ -65,7 +65,7 @@ input, select, textarea { font-family: inherit; }
 .brand {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--accent);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -93,7 +93,7 @@ input, select, textarea { font-family: inherit; }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active {
   background: var(--white);
-  color: var(--text);
+  color: var(--accent);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
@@ -166,7 +166,7 @@ input, select, textarea { font-family: inherit; }
   padding-bottom: 10px;
   transition: border-color var(--transition);
 }
-.income-field:focus-within { border-color: var(--text); }
+.income-field:focus-within { border-color: var(--accent); }
 .income-prefix {
   font-size: 32px;
   font-weight: 600;
@@ -224,7 +224,7 @@ input, select, textarea { font-family: inherit; }
   display: block;
   width: 100%;
   padding: 13px 24px;
-  background: var(--text);
+  background: var(--accent);
   color: var(--white);
   font-size: 15px;
   font-weight: 600;
@@ -553,7 +553,7 @@ input, select, textarea { font-family: inherit; }
   cursor: pointer;
   transition: border-color var(--transition);
 }
-.form-select:focus { outline: none; border-color: var(--text); }
+.form-select:focus { outline: none; border-color: var(--accent); }
 .form-input-row {
   display: flex;
   align-items: center;
@@ -562,7 +562,7 @@ input, select, textarea { font-family: inherit; }
   overflow: hidden;
   transition: border-color var(--transition);
 }
-.form-input-row:focus-within { border-color: var(--text); }
+.form-input-row:focus-within { border-color: var(--accent); }
 .form-prefix {
   padding: 10px 12px;
   background: var(--bg);
@@ -668,8 +668,8 @@ input, select, textarea { font-family: inherit; }
 }
 .toc-link:hover { color: var(--text); }
 .toc-link.active {
-  color: var(--text);
-  border-left-color: var(--text);
+  color: var(--accent);
+  border-left-color: var(--accent);
   font-weight: 500;
 }
 .guide-content { min-width: 0; }
