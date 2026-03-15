@@ -233,7 +233,13 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
       b.setAttribute('aria-selected', b.dataset.tab === tab);
     });
     document.querySelectorAll('.tab-panel').forEach(p => {
-      p.classList.toggle('hidden', p.id !== `panel-${tab}`);
+      const isActive = p.id === `panel-${tab}`;
+      p.classList.toggle('hidden', !isActive);
+      if (isActive) {
+        p.style.animation = 'none';
+        p.offsetHeight; // force reflow
+        p.style.animation = 'fadeIn 0.25s ease both';
+      }
     });
     if (tab === 'guide') initTocHighlight();
   });
@@ -290,6 +296,17 @@ document.querySelectorAll('.quick-btn').forEach(btn => {
 
 calculateBtn.addEventListener('click', handleCalculate);
 
+calculateBtn.addEventListener('click', e => {
+  if (calculateBtn.disabled) return;
+  const ripple = document.createElement('span');
+  ripple.className = 'btn-ripple';
+  const rect = calculateBtn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size / 2}px;top:${e.clientY - rect.top - size / 2}px`;
+  calculateBtn.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove());
+});
+
 function handleCalculate() {
   if (currentMonthly <= 0) return;
 
@@ -334,6 +351,12 @@ function handleCalculate() {
     hasCalculated = true;
     resultsSection.classList.remove('hidden');
     lateFeesSection.classList.remove('hidden');
+    document.querySelectorAll('#statsRow .stat').forEach((el, i) => {
+      el.style.animation = `statIn 0.35s ease ${0.05 + i * 0.07}s both`;
+    });
+    document.querySelectorAll('.rate-card').forEach((el, i) => {
+      el.style.animation = `cardIn 0.38s ease ${0.18 + i * 0.09}s both`;
+    });
     setTimeout(() => resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   }
 }
@@ -529,6 +552,8 @@ document.querySelector('.js-reset').addEventListener('click', e => {
   document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
   resultsSection.classList.add('hidden');
   lateFeesSection.classList.add('hidden');
+  document.querySelectorAll('#statsRow .stat').forEach(el => { el.style.animation = ''; });
+  document.querySelectorAll('.rate-card').forEach(el => { el.style.animation = ''; });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   setTimeout(() => incomeInput.focus(), 400);
 });

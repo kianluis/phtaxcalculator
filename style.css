@@ -215,10 +215,12 @@ input, select, textarea { font-family: inherit; }
   color: var(--text);
   border-color: var(--border-strong);
 }
+.quick-btn:active { transform: scale(0.93); }
 .quick-btn.selected {
   background: var(--text);
   color: var(--white);
   border-color: var(--text);
+  transform: scale(1.04);
 }
 .calculate-btn {
   display: block;
@@ -232,6 +234,16 @@ input, select, textarea { font-family: inherit; }
   transition: opacity var(--transition), transform var(--transition);
   text-align: center;
   margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.28);
+  transform: scale(0);
+  animation: rippleAnim 0.55s linear;
+  pointer-events: none;
 }
 .calculate-btn:not(:disabled):hover { opacity: 0.85; }
 .calculate-btn:not(:disabled):active { transform: scale(0.99); }
@@ -307,9 +319,13 @@ input, select, textarea { font-family: inherit; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 24px;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
 }
-.rate-card:hover { border-color: var(--border-strong); }
+.rate-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  transform: translateY(-2px);
+}
 .rate-card.recommended {
   border-color: var(--green);
   border-width: 1.5px;
@@ -488,6 +504,7 @@ input, select, textarea { font-family: inherit; }
   border-bottom: 1px solid var(--border);
   color: var(--text-2);
   vertical-align: middle;
+  transition: background 0.12s ease;
 }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--bg); }
@@ -553,7 +570,7 @@ input, select, textarea { font-family: inherit; }
   cursor: pointer;
   transition: border-color var(--transition);
 }
-.form-select:focus { outline: none; border-color: var(--accent); }
+.form-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 .form-input-row {
   display: flex;
   align-items: center;
@@ -562,7 +579,7 @@ input, select, textarea { font-family: inherit; }
   overflow: hidden;
   transition: border-color var(--transition);
 }
-.form-input-row:focus-within { border-color: var(--accent); }
+.form-input-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 .form-prefix {
   padding: 10px 12px;
   background: var(--bg);
@@ -793,6 +810,7 @@ input, select, textarea { font-family: inherit; }
   content: '−';
   color: var(--text-3);
 }
+.faq-item[open] p { animation: slideDown 0.22s ease both; }
 .faq-item p {
   padding-bottom: 16px;
   font-size: 14px;
@@ -836,6 +854,21 @@ input, select, textarea { font-family: inherit; }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes statIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes rippleAnim {
+  to { transform: scale(4); opacity: 0; }
 }
 
 /* ─── RESPONSIVE ─────────────────────────────────────────── */
