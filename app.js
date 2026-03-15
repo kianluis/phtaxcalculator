@@ -6,7 +6,6 @@
 
 /* ─── CONSTANTS ──────────────────────────────────────────── */
 
-// 2024 graduated income tax brackets (TRAIN Law, RA 10963)
 const GRADUATED_BRACKETS = [
   { min: 0,         max: 250_000,    base: 0,         rate: 0.00 },
   { min: 250_001,   max: 400_000,    base: 0,         rate: 0.15 },
@@ -16,130 +15,69 @@ const GRADUATED_BRACKETS = [
   { min: 8_000_001, max: Infinity,   base: 2_202_500, rate: 0.35 },
 ];
 
-// OSD rate for graduated computation
-const OSD_RATE       = 0.40;   // 40% Optional Standard Deduction
-const FLAT_RATE      = 0.08;   // 8% flat income tax
-const FLAT_EXEMPTION = 250_000; // first ₱250k exempt under 8% rate
+const OSD_RATE       = 0.40;
+const FLAT_RATE      = 0.08;
+const FLAT_EXEMPTION = 250_000;
 
-// BIR quarterly deadlines (month is 0-indexed)
-// Format: { label, periodLabel, year, month, day }
-const QUARTERLY_DEADLINES = [
-  { quarter: 'Q1', period: 'January – March', deadlineMonth: 4, deadlineDay: 15 },
-  { quarter: 'Q2', period: 'January – June',  deadlineMonth: 7, deadlineDay: 15 },
-  { quarter: 'Q3', period: 'January – September', deadlineMonth: 10, deadlineDay: 15 },
-  { quarter: 'Annual ITR', period: 'Full Year', deadlineMonth: 3, deadlineDay: 15, isAnnual: true },
-];
-
-// BIR Compromise penalty schedule (based on basic tax due)
 const COMPROMISE_SCHEDULE = [
-  { maxTax: 1_000,    penalty: 200 },
-  { maxTax: 5_000,    penalty: 500 },
-  { maxTax: 20_000,   penalty: 1_000 },
-  { maxTax: 50_000,   penalty: 2_000 },
-  { maxTax: 100_000,  penalty: 5_000 },
-  { maxTax: 500_000,  penalty: 10_000 },
-  { maxTax: 1_000_000,penalty: 20_000 },
-  { maxTax: Infinity, penalty: 50_000 },
+  { maxTax: 1_000,     penalty: 200 },
+  { maxTax: 5_000,     penalty: 500 },
+  { maxTax: 20_000,    penalty: 1_000 },
+  { maxTax: 50_000,    penalty: 2_000 },
+  { maxTax: 100_000,   penalty: 5_000 },
+  { maxTax: 500_000,   penalty: 10_000 },
+  { maxTax: 1_000_000, penalty: 20_000 },
+  { maxTax: Infinity,  penalty: 50_000 },
 ];
 
 /* ─── TAX CALCULATIONS ───────────────────────────────────── */
 
-/**
- * Compute graduated income tax for a given net taxable income.
- */
-function computeGraduatedTax(netTaxableIncome) {
-  if (netTaxableIncome <= 0) return 0;
-  for (const bracket of GRADUATED_BRACKETS) {
-    if (netTaxableIncome <= bracket.max) {
-      const excess = Math.max(0, netTaxableIncome - bracket.min + 1);
-      return bracket.base + excess * bracket.rate;
+function computeGraduatedTax(netTaxable) {
+  if (netTaxable <= 0) return 0;
+  for (const b of GRADUATED_BRACKETS) {
+    if (netTaxable <= b.max) {
+      return b.base + Math.max(0, netTaxable - b.min + 1) * b.rate;
     }
   }
   return 0;
 }
 
-/**
- * Compute 8% flat rate tax for an annual income.
- * First ₱250,000 is exempt.
- */
 function compute8pctTax(annualIncome) {
-  const taxableAmount = Math.max(0, annualIncome - FLAT_EXEMPTION);
-  return taxableAmount * FLAT_RATE;
+  return Math.max(0, annualIncome - FLAT_EXEMPTION) * FLAT_RATE;
 }
 
-/**
- * Build full quarterly breakdown for 8% rate.
- * Uses the cumulative method: each quarter pays the difference
- * from prior cumulative payments.
- */
-function build8pctQuarterly(monthlyIncome) {
-  const quarterMonths = [3, 6, 9, 12];
-  let previousCumTax = 0;
-  const quarters = [];
-
-  quarterMonths.forEach((months, i) => {
-    const cumIncome = monthlyIncome * months;
+function build8pctQuarterly(monthly) {
+  let prevTax = 0;
+  return [3, 6, 9, 12].map((months, i) => {
+    const cumIncome = monthly * months;
     const cumTax = compute8pctTax(cumIncome);
-    const payment = Math.max(0, cumTax - previousCumTax);
-    previousCumTax = cumTax;
-    quarters.push({
-      months,
-      cumIncome,
-      cumTax,
-      payment,
-      isAnnual: i === 3,
-    });
+    const payment = Math.max(0, cumTax - prevTax);
+    prevTax = cumTax;
+    return { months, cumIncome, cumTax, payment };
   });
-
-  return quarters;
 }
 
-/**
- * Build full quarterly breakdown for graduated rate with 40% OSD.
- * Net taxable = cumulative gross × 60%.
- */
-function buildGradQuarterly(monthlyIncome) {
-  const quarterMonths = [3, 6, 9, 12];
-  let previousCumTax = 0;
-  const quarters = [];
-
-  quarterMonths.forEach((months, i) => {
-    const cumGross = monthlyIncome * months;
+function buildGradQuarterly(monthly) {
+  let prevTax = 0;
+  return [3, 6, 9, 12].map((months) => {
+    const cumGross = monthly * months;
     const netTaxable = cumGross * (1 - OSD_RATE);
     const cumTax = computeGraduatedTax(netTaxable);
-    const payment = Math.max(0, cumTax - previousCumTax);
-    previousCumTax = cumTax;
-    quarters.push({
-      months,
-      cumGross,
-      netTaxable,
-      cumTax,
-      payment,
-      isAnnual: i === 3,
-    });
+    const payment = Math.max(0, cumTax - prevTax);
+    prevTax = cumTax;
+    return { months, cumGross, netTaxable, cumTax, payment };
   });
-
-  return quarters;
 }
 
-/**
- * Get effective tax rate as a percentage.
- */
 function effectiveRate(tax, income) {
-  if (income <= 0) return 0;
-  return (tax / income) * 100;
+  return income > 0 ? (tax / income) * 100 : 0;
 }
 
-/**
- * Compute BIR late fee components.
- */
 function computeLateFees(basicTax, daysLate) {
   if (daysLate <= 0 || basicTax <= 0) return { surcharge: 0, interest: 0, compromise: 0, total: basicTax };
-
-  const surcharge = basicTax * 0.25;
-  const interest  = basicTax * 0.12 * (daysLate / 365);
+  const surcharge  = basicTax * 0.25;
+  const interest   = basicTax * 0.12 * (daysLate / 365);
   const compromise = getCompromisePenalty(basicTax);
-
   return {
     surcharge:  Math.round(surcharge  * 100) / 100,
     interest:   Math.round(interest   * 100) / 100,
@@ -149,34 +87,26 @@ function computeLateFees(basicTax, daysLate) {
 }
 
 function getCompromisePenalty(taxDue) {
-  for (const tier of COMPROMISE_SCHEDULE) {
-    if (taxDue <= tier.maxTax) return tier.penalty;
+  for (const t of COMPROMISE_SCHEDULE) {
+    if (taxDue <= t.maxTax) return t.penalty;
   }
   return 50_000;
 }
 
 /* ─── FORMATTING ─────────────────────────────────────────── */
 
-function formatCurrency(amount, compact = false) {
-  if (amount === null || amount === undefined) return '₱0';
-  const rounded = Math.round(amount);
-  if (compact && rounded >= 1_000_000) {
-    return '₱' + (rounded / 1_000_000).toFixed(2) + 'M';
-  }
-  if (compact && rounded >= 1_000) {
-    return '₱' + (rounded / 1_000).toFixed(1) + 'k';
-  }
-  return '₱' + rounded.toLocaleString('en-PH');
+function fmt(amount) {
+  if (!amount && amount !== 0) return '₱0';
+  return '₱' + Math.round(amount).toLocaleString('en-PH');
 }
 
 function formatNumberInput(raw) {
   const digits = raw.replace(/[^0-9]/g, '');
-  if (!digits) return '';
-  return Number(digits).toLocaleString('en-PH');
+  return digits ? Number(digits).toLocaleString('en-PH') : '';
 }
 
-function parseInputValue(formatted) {
-  return parseFloat(formatted.replace(/,/g, '')) || 0;
+function parseInput(str) {
+  return parseFloat(str.replace(/,/g, '')) || 0;
 }
 
 function formatDate(date) {
@@ -185,167 +115,150 @@ function formatDate(date) {
 
 /* ─── ANIMATED COUNTER ───────────────────────────────────── */
 
-function animateCounter(el, targetValue, duration = 800) {
+function animateCounter(el, target, duration = 600) {
   const start = performance.now();
-  const startValue = 0;
-
-  function step(timestamp) {
-    const progress = Math.min((timestamp - start) / duration, 1);
-    // Ease out cubic
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const current = Math.round(startValue + (targetValue - startValue) * eased);
-    el.textContent = '₱' + current.toLocaleString('en-PH');
-    if (progress < 1) requestAnimationFrame(step);
-  }
-
+  const step  = (ts) => {
+    const p = Math.min((ts - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = '₱' + Math.round(target * eased).toLocaleString('en-PH');
+    if (p < 1) requestAnimationFrame(step);
+  };
   requestAnimationFrame(step);
 }
 
-/* ─── QUARTERLY SCHEDULE HELPERS ─────────────────────────── */
+/* ─── SCHEDULE HELPERS ───────────────────────────────────── */
 
-function getDeadlineDate(year, quarter) {
-  // quarter: 1=Q1, 2=Q2, 3=Q3, 4=Annual
-  const dates = {
-    1: new Date(year, 4, 15),   // May 15  (month index 4)
-    2: new Date(year, 7, 15),   // Aug 15
-    3: new Date(year, 10, 15),  // Nov 15
-    4: new Date(year + 1, 3, 15), // Apr 15 next year (annual)
-  };
-  return dates[quarter];
+function deadlineDate(year, quarter) {
+  return {
+    1: new Date(year, 4, 15),
+    2: new Date(year, 7, 15),
+    3: new Date(year, 10, 15),
+    4: new Date(year + 1, 3, 15),
+  }[quarter];
 }
 
-function getStatus(deadline) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(deadline);
-  d.setHours(0, 0, 0, 0);
-  const diffMs = d - today;
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) return { label: `${Math.abs(diffDays)}d overdue`, cls: 'status-overdue' };
-  if (diffDays <= 30) return { label: `Due in ${diffDays}d`, cls: 'status-upcoming' };
-  return { label: 'Upcoming', cls: 'status-future' };
+function statusOf(deadline) {
+  const now  = new Date(); now.setHours(0,0,0,0);
+  const d    = new Date(deadline); d.setHours(0,0,0,0);
+  const days = Math.ceil((d - now) / 86400000);
+  if (days < 0)    return { label: `${Math.abs(days)}d overdue`, cls: 'status-overdue' };
+  if (days <= 30)  return { label: `Due in ${days}d`,            cls: 'status-upcoming' };
+  return               { label: 'Upcoming',                      cls: 'status-future' };
 }
-
-/* ─── LATE PERIOD GENERATOR ──────────────────────────────── */
 
 function generateLatePeriods() {
   const today = new Date();
-  const periods = [];
-
-  // Go back 3 years
+  const out   = [];
   for (let y = today.getFullYear() - 2; y <= today.getFullYear(); y++) {
     for (let q = 1; q <= 4; q++) {
-      const deadline = getDeadlineDate(y, q);
-      if (deadline < today) {
-        const quarterLabels = { 1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Annual' };
-        const periodLabels = {
-          1: `Jan–Mar ${y}`,
-          2: `Apr–Jun ${y}`,
-          3: `Jul–Sep ${y}`,
-          4: `Full Year ${y}`,
-        };
-        const formLabel = q === 4 ? '1701' : '1701Q';
-        periods.push({
+      const dl = deadlineDate(y, q);
+      if (dl < today) {
+        const qLabel = { 1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Annual' }[q];
+        const pLabel = { 1: `Jan–Mar ${y}`, 2: `Apr–Jun ${y}`, 3: `Jul–Sep ${y}`, 4: `Full Year ${y}` }[q];
+        out.push({
           value: `${y}-Q${q}`,
-          label: `${quarterLabels[q]} ${y} (${periodLabels[q]}) — BIR ${formLabel}`,
-          deadline,
-          year: y,
-          quarter: q,
-          periodLabel: periodLabels[q],
+          label: `${qLabel} ${y} — ${pLabel} (BIR ${q === 4 ? '1701' : '1701Q'})`,
+          deadline: dl, year: y, quarter: q, periodLabel: pLabel,
         });
       }
     }
   }
-  return periods.reverse(); // most recent first
+  return out.reverse();
 }
 
 /* ─── DOM REFS ───────────────────────────────────────────── */
 
-const incomeInput        = document.getElementById('incomeInput');
-const currencySign       = document.getElementById('currencySign');
-const incomeHint         = document.getElementById('incomeHint');
-const calculateBtn       = document.getElementById('calculateBtn');
-const resultsSection     = document.getElementById('results-section');
-const lateFeesSection    = document.getElementById('late-fees-section');
-const footerEl           = document.getElementById('footer');
-const scrollIndicator    = document.getElementById('scrollIndicator');
-const navEl              = document.getElementById('nav');
-const navResults         = document.getElementById('navResults');
-const navLateFees        = document.getElementById('navLateFees');
+const $ = id => document.getElementById(id);
 
-// Summary bar
-const summaryAnnual  = document.getElementById('summaryAnnual');
-const summaryTax8    = document.getElementById('summaryTax8');
-const summaryTaxGrad = document.getElementById('summaryTaxGrad');
-const summarySave    = document.getElementById('summarySave');
+const incomeInput     = $('incomeInput');
+const currencySign    = $('currencySign');
+const incomeHint      = $('incomeHint');
+const calculateBtn    = $('calculateBtn');
+const resultsSection  = $('results-section');
+const lateFeesSection = $('late-fees-section');
 
-// Rate cards
-const tax8Annual     = document.getElementById('tax8Annual');
-const tax8Monthly    = document.getElementById('tax8Monthly');
-const taxGradAnnual  = document.getElementById('taxGradAnnual');
-const taxGradMonthly = document.getElementById('taxGradMonthly');
-const formula8       = document.getElementById('formula8');
-const formulaGrad    = document.getElementById('formulaGrad');
-const timeline8      = document.getElementById('timeline8');
-const timelineGrad   = document.getElementById('timelineGrad');
-const tag8           = document.getElementById('tag8');
-const tagGrad        = document.getElementById('tagGrad');
-const card8          = document.getElementById('card8');
-const cardGrad       = document.getElementById('cardGrad');
+const summaryAnnual   = $('summaryAnnual');
+const summaryTax8     = $('summaryTax8');
+const summaryTaxGrad  = $('summaryTaxGrad');
+const summarySave     = $('summarySave');
 
-// Recommendation
-const recTitle  = document.getElementById('recTitle');
-const recDetail = document.getElementById('recDetail');
-const recBanner = document.getElementById('recommendationBanner');
+const tax8Annual      = $('tax8Annual');
+const tax8Monthly     = $('tax8Monthly');
+const taxGradAnnual   = $('taxGradAnnual');
+const taxGradMonthly  = $('taxGradMonthly');
+const formula8        = $('formula8');
+const formulaGrad     = $('formulaGrad');
+const timeline8       = $('timeline8');
+const timelineGrad    = $('timelineGrad');
+const tag8            = $('tag8');
+const tagGrad         = $('tagGrad');
+const card8           = $('card8');
+const cardGrad        = $('cardGrad');
 
-// Quarterly table
-const quarterlyTableBody = document.getElementById('quarterlyTableBody');
-const taxYearLabel       = document.getElementById('taxYearLabel');
+const recTitle        = $('recTitle');
+const recDetail       = $('recDetail');
 
-// Late fees
-const latePeriodSelect = document.getElementById('latePeriodSelect');
-const customTaxGroup   = document.getElementById('customTaxGroup');
-const customTaxInput   = document.getElementById('customTaxInput');
-const latePeriodInfo   = document.getElementById('latePeriodInfo');
-const lateFeesResult   = document.getElementById('lateFeesResult');
-const infoPeriod       = document.getElementById('infoPeriod');
-const infoDeadline     = document.getElementById('infoDeadline');
-const infoDaysLate     = document.getElementById('infoDaysLate');
-const feeBasicTax      = document.getElementById('feeBasicTax');
-const feeSurcharge     = document.getElementById('feeSurcharge');
-const feeInterest      = document.getElementById('feeInterest');
-const feeInterestDays  = document.getElementById('feeInterestDays');
-const feeCompromise    = document.getElementById('feeCompromise');
-const feeTotal         = document.getElementById('feeTotal');
+const taxYearLabel    = $('taxYearLabel');
+const quarterlyBody   = $('quarterlyTableBody');
 
-// Modal
-const modalOverlay = document.getElementById('modalOverlay');
-const modalClose   = document.getElementById('modalClose');
-const modalContent = document.getElementById('modalContent');
+const latePeriodSel   = $('latePeriodSelect');
+const customTaxGroup  = $('customTaxGroup');
+const customTaxInput  = $('customTaxInput');
+const latePeriodInfo  = $('latePeriodInfo');
+const lateResult      = $('lateFeesResult');
+const infoPeriod      = $('infoPeriod');
+const infoDeadline    = $('infoDeadline');
+const infoDaysLate    = $('infoDaysLate');
+const feeBasicTax     = $('feeBasicTax');
+const feeSurcharge    = $('feeSurcharge');
+const feeInterest     = $('feeInterest');
+const feeInterestDays = $('feeInterestDays');
+const feeCompromise   = $('feeCompromise');
+const feeTotal        = $('feeTotal');
 
 /* ─── STATE ──────────────────────────────────────────────── */
 
-let currentMonthly = 0;
-let current8pctAnnual  = 0;
-let currentGradAnnual  = 0;
-let selectedQuarterTax = { '8pct': {}, 'grad': {} };
-let hasCalculated = false;
+let currentMonthly    = 0;
+let current8pctAnnual = 0;
+let currentGradAnnual = 0;
+let hasCalculated     = false;
 
-/* ─── INCOME INPUT HANDLING ──────────────────────────────── */
+/* ─── TAB SWITCHING ──────────────────────────────────────── */
 
-incomeInput.addEventListener('input', (e) => {
-  const raw = e.target.value;
-  const formatted = formatNumberInput(raw);
-  e.target.value = formatted;
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+      b.setAttribute('aria-selected', b.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('hidden', p.id !== `panel-${tab}`);
+    });
+    if (tab === 'guide') initTocHighlight();
+  });
+});
 
-  const value = parseInputValue(formatted);
-  currentMonthly = value;
+// Inline "Calculator tab" link inside the guide
+document.querySelectorAll('.inline-tab-link').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const calcBtn = document.querySelector('.tab-btn[data-tab="calculator"]');
+    if (calcBtn) calcBtn.click();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
 
-  if (value > 0) {
+/* ─── INCOME INPUT ───────────────────────────────────────── */
+
+incomeInput.addEventListener('input', e => {
+  const formatted = formatNumberInput(e.target.value);
+  e.target.value  = formatted;
+  currentMonthly  = parseInput(formatted);
+
+  if (currentMonthly > 0) {
     currencySign.classList.add('active');
     calculateBtn.disabled = false;
-    incomeHint.textContent = `Annual income: ${formatCurrency(value * 12)}`;
+    incomeHint.textContent = `Annual income: ${fmt(currentMonthly * 12)}`;
   } else {
     currencySign.classList.remove('active');
     calculateBtn.disabled = true;
@@ -353,10 +266,8 @@ incomeInput.addEventListener('input', (e) => {
   }
 });
 
-incomeInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !calculateBtn.disabled) {
-    handleCalculate();
-  }
+incomeInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !calculateBtn.disabled) handleCalculate();
 });
 
 /* ─── QUICK PICKS ────────────────────────────────────────── */
@@ -365,16 +276,13 @@ document.querySelectorAll('.quick-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const amount = parseInt(btn.dataset.amount, 10);
     incomeInput.value = amount.toLocaleString('en-PH');
-    currentMonthly = amount;
+    currentMonthly    = amount;
     currencySign.classList.add('active');
     calculateBtn.disabled = false;
-    incomeHint.textContent = `Annual income: ${formatCurrency(amount * 12)}`;
-
+    incomeHint.textContent = `Annual income: ${fmt(amount * 12)}`;
     document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-
-    // Auto-calculate with a tiny delay for visual feedback
-    setTimeout(handleCalculate, 180);
+    setTimeout(handleCalculate, 120);
   });
 });
 
@@ -385,128 +293,104 @@ calculateBtn.addEventListener('click', handleCalculate);
 function handleCalculate() {
   if (currentMonthly <= 0) return;
 
-  const monthly  = currentMonthly;
-  const annual   = monthly * 12;
+  const monthly = currentMonthly;
+  const annual  = monthly * 12;
 
-  // ── Compute taxes ──
-  const tax8     = compute8pctTax(annual);
-  const netGrad  = annual * (1 - OSD_RATE);
-  const taxGrad  = computeGraduatedTax(netGrad);
+  const tax8    = compute8pctTax(annual);
+  const netGrad = annual * (1 - OSD_RATE);
+  const taxGrad = computeGraduatedTax(netGrad);
 
   current8pctAnnual = tax8;
   currentGradAnnual = taxGrad;
 
-  const better = tax8 <= taxGrad ? '8pct' : 'grad';
+  const better  = tax8 <= taxGrad ? '8pct' : 'grad';
   const savings = Math.abs(tax8 - taxGrad);
 
-  // Build quarterly breakdowns
-  const q8   = build8pctQuarterly(monthly);
+  const q8    = build8pctQuarterly(monthly);
   const qGrad = buildGradQuarterly(monthly);
 
-  // ── Update Summary Bar ──
-  summaryAnnual.textContent  = formatCurrency(annual);
+  // Summary stats
+  summaryAnnual.textContent = fmt(annual);
   animateCounter(summaryTax8,    tax8);
   animateCounter(summaryTaxGrad, taxGrad);
-  summarySave.textContent    = better === '8pct' ? '8% Rate' : 'Graduated';
+  summarySave.textContent = better === '8pct' ? '8% Flat Rate' : 'Graduated Rate';
 
-  // ── Update rate cards ──
   renderCard8(monthly, annual, tax8, q8);
   renderCardGrad(monthly, annual, netGrad, taxGrad, qGrad);
   renderRecommendation(better, savings, annual, tax8, taxGrad);
 
-  // ── Mark recommended ──
   card8.classList.toggle('recommended',    better === '8pct');
   cardGrad.classList.toggle('recommended', better === 'grad');
-  tag8.textContent    = better === '8pct'  ? '✓ Lower tax' : '';
-  tagGrad.textContent = better === 'grad'  ? '✓ Lower tax' : '';
+  tag8.classList.toggle('hidden',    better !== '8pct');
+  tagGrad.classList.toggle('hidden', better !== 'grad');
 
-  // ── Tax year label ──
-  const taxYear = new Date().getFullYear();
-  taxYearLabel.textContent = `Tax Year ${taxYear} · Monthly Income ${formatCurrency(monthly)}`;
+  const year = new Date().getFullYear();
+  taxYearLabel.textContent = `${year} — ₱${monthly.toLocaleString('en-PH')}/mo`;
 
-  // ── Quarterly table ──
-  renderQuarterlyTable(monthly, q8, qGrad);
-
-  // ── Populate late fee periods ──
+  renderQuarterlyTable(q8, qGrad);
   populateLateFeePeriods(q8, qGrad);
 
-  // ── Reveal sections ──
   if (!hasCalculated) {
     hasCalculated = true;
-    revealResults();
+    resultsSection.classList.remove('hidden');
+    lateFeesSection.classList.remove('hidden');
+    setTimeout(() => resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   }
-
-  scrollIndicator.classList.add('hidden');
 }
 
-/* ─── RENDER RATE CARD — 8% ──────────────────────────────── */
+/* ─── CARD — 8% ──────────────────────────────────────────── */
 
 function renderCard8(monthly, annual, tax, quarters) {
-  const taxableAmount = Math.max(0, annual - FLAT_EXEMPTION);
-
   animateCounter(tax8Annual, tax);
-  tax8Monthly.textContent = formatCurrency(tax / 12) + '/mo';
+  tax8Monthly.textContent = fmt(tax / 12) + ' / month';
 
-  // Formula lines
-  formula8.innerHTML = `
-    <div class="formula-line"><span>Gross Annual Income</span><strong>${formatCurrency(annual)}</strong></div>
-    <div class="formula-line"><span>Less: Exemption</span><strong>−${formatCurrency(FLAT_EXEMPTION)}</strong></div>
-    <div class="formula-line"><span>Taxable Amount</span><strong>${formatCurrency(taxableAmount)}</strong></div>
-    <div class="formula-line"><span>Rate</span><strong>× 8%</strong></div>
-    <div class="formula-line total"><span>Annual Tax Due</span><strong>${formatCurrency(tax)}</strong></div>
-  `;
+  const taxable = Math.max(0, annual - FLAT_EXEMPTION);
+  formula8.innerHTML = fRow('Gross annual income', fmt(annual))
+    + fRow('Less: exemption', '−' + fmt(FLAT_EXEMPTION))
+    + fRow('Taxable amount', fmt(taxable))
+    + fRow('Rate', '× 8%')
+    + fRow('Annual tax due', fmt(tax), true);
 
-  // Timeline
-  const labels = ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Annual ITR'];
+  const labels    = ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Annual ITR'];
   const deadlines = ['May 15', 'Aug 15', 'Nov 15', 'Apr 15 (next yr)'];
-  timeline8.innerHTML = `<p class="qt-title">Quarterly Payment Schedule</p>` +
-    quarters.map((q, i) => `
-      <div class="qt-row">
-        <div class="qt-dot blue"></div>
-        <span class="qt-period">${labels[i]}</span>
-        <span class="qt-deadline">${deadlines[i]}</span>
-        <span class="qt-amount ${q.payment === 0 ? 'qt-zero' : ''}">${q.payment === 0 ? 'No payment' : formatCurrency(q.payment)}</span>
-      </div>
-    `).join('');
+  timeline8.innerHTML = quarters.map((q, i) => schedRow(labels[i], deadlines[i], q.payment)).join('');
 }
 
-/* ─── RENDER RATE CARD — GRADUATED ──────────────────────────*/
+/* ─── CARD — GRADUATED ───────────────────────────────────── */
 
 function renderCardGrad(monthly, annual, netTaxable, tax, quarters) {
   animateCounter(taxGradAnnual, tax);
-  taxGradMonthly.textContent = formatCurrency(tax / 12) + '/mo';
+  taxGradMonthly.textContent = fmt(tax / 12) + ' / month';
 
-  const osdAmount = annual * OSD_RATE;
-  const effRate = effectiveRate(tax, annual).toFixed(2);
-  const bracketDesc = getGraduatedBracketDescription(netTaxable);
+  const osd = annual * OSD_RATE;
+  formulaGrad.innerHTML = fRow('Gross annual income', fmt(annual))
+    + fRow('Less: 40% OSD', '−' + fmt(osd))
+    + fRow('Net taxable income', fmt(netTaxable))
+    + fRow('Tax bracket', bracketLabel(netTaxable))
+    + fRow('Annual tax due', fmt(tax), true);
 
-  formulaGrad.innerHTML = `
-    <div class="formula-line"><span>Gross Annual Income</span><strong>${formatCurrency(annual)}</strong></div>
-    <div class="formula-line"><span>Less: 40% OSD</span><strong>−${formatCurrency(osdAmount)}</strong></div>
-    <div class="formula-line"><span>Net Taxable Income</span><strong>${formatCurrency(netTaxable)}</strong></div>
-    <div class="formula-line"><span>Tax Bracket</span><strong>${bracketDesc}</strong></div>
-    <div class="formula-line total"><span>Annual Tax Due</span><strong>${formatCurrency(tax)}</strong></div>
-  `;
-
-  const labels = ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Annual ITR'];
+  const labels    = ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Annual ITR'];
   const deadlines = ['May 15', 'Aug 15', 'Nov 15', 'Apr 15 (next yr)'];
-  timelineGrad.innerHTML = `<p class="qt-title">Quarterly Payment Schedule</p>` +
-    quarters.map((q, i) => `
-      <div class="qt-row">
-        <div class="qt-dot purple"></div>
-        <span class="qt-period">${labels[i]}</span>
-        <span class="qt-deadline">${deadlines[i]}</span>
-        <span class="qt-amount ${q.payment === 0 ? 'qt-zero' : ''}">${q.payment === 0 ? 'No payment' : formatCurrency(q.payment)}</span>
-      </div>
-    `).join('');
+  timelineGrad.innerHTML = quarters.map((q, i) => schedRow(labels[i], deadlines[i], q.payment)).join('');
 }
 
-function getGraduatedBracketDescription(netTaxable) {
+function fRow(label, value, isTotal = false) {
+  return `<div class="formula-line${isTotal ? ' f-total' : ''}"><span>${label}</span><strong>${value}</strong></div>`;
+}
+
+function schedRow(period, deadline, payment) {
+  const isZero = payment === 0;
+  return `<div class="sched-row">
+    <span class="sched-period">${period}</span>
+    <span class="sched-deadline">${deadline}</span>
+    <span class="sched-amount ${isZero ? 'sched-zero' : ''}">${isZero ? '—' : fmt(payment)}</span>
+  </div>`;
+}
+
+function bracketLabel(netTaxable) {
   for (const b of GRADUATED_BRACKETS) {
     if (netTaxable <= b.max) {
-      if (b.rate === 0) return '0% (exempt)';
-      const pct = (b.rate * 100).toFixed(0);
-      return `${pct}% bracket`;
+      return b.rate === 0 ? '0% (exempt)' : `${(b.rate * 100).toFixed(0)}% bracket`;
     }
   }
   return '35% bracket';
@@ -516,250 +400,157 @@ function getGraduatedBracketDescription(netTaxable) {
 
 function renderRecommendation(better, savings, annual, tax8, taxGrad) {
   if (savings === 0) {
-    recTitle.textContent = 'Both rates result in the same tax for you.';
-    recDetail.textContent = 'You can choose either option. The 8% rate is simpler — no expense tracking required.';
+    recTitle.textContent  = 'Both rates produce the same tax for your income.';
+    recDetail.textContent = 'Either option works. The 8% rate is simpler — no OSD tracking required.';
     return;
   }
-
-  const savingsFormatted = formatCurrency(savings);
-  const effRate8  = effectiveRate(tax8,   annual).toFixed(1);
-  const effGrad   = effectiveRate(taxGrad, annual).toFixed(1);
-
+  const eff8  = effectiveRate(tax8,   annual).toFixed(1);
+  const effG  = effectiveRate(taxGrad, annual).toFixed(1);
   if (better === '8pct') {
-    recTitle.textContent  = `The 8% Flat Rate saves you ${savingsFormatted} this year.`;
-    recDetail.textContent = `Your effective rate under 8% is ${effRate8}% vs ${effGrad}% under the graduated system. Since your net taxable income is pushed into a higher bracket even after the 40% OSD, the flat 8% wins — and it's simpler.`;
+    recTitle.textContent  = `The 8% Flat Rate saves you ${fmt(savings)} this year.`;
+    recDetail.textContent = `Your effective rate under 8% is ${eff8}% vs ${effG}% under graduated. Even with the 40% OSD, your net taxable income falls into a bracket that makes the flat rate cheaper — and it's one less form to file.`;
   } else {
-    recTitle.textContent  = `The Graduated Rate saves you ${savingsFormatted} this year.`;
-    recDetail.textContent = `Your effective rate under the graduated system is ${effGrad}% vs ${effRate8}% flat. With the 40% OSD reducing your taxable income to the lower brackets, graduated beats the flat 8% at your income level.`;
+    recTitle.textContent  = `The Graduated Rate saves you ${fmt(savings)} this year.`;
+    recDetail.textContent = `Your effective rate under graduated is ${effG}% vs ${eff8}% flat. The 40% OSD reduces your taxable income enough that the graduated brackets come out cheaper at your income level.`;
   }
 }
 
 /* ─── QUARTERLY TABLE ────────────────────────────────────── */
 
-function renderQuarterlyTable(monthly, q8, qGrad) {
-  const today    = new Date();
-  const taxYear  = today.getFullYear();
-
+function renderQuarterlyTable(q8, qGrad) {
+  const year = new Date().getFullYear();
   const rows = [
-    { label: 'Q1 (Jan–Mar)',   quarter: 1, deadline: getDeadlineDate(taxYear, 1), idx: 0 },
-    { label: 'Q2 (Apr–Jun)',   quarter: 2, deadline: getDeadlineDate(taxYear, 2), idx: 1 },
-    { label: 'Q3 (Jul–Sep)',   quarter: 3, deadline: getDeadlineDate(taxYear, 3), idx: 2 },
-    { label: `Annual ${taxYear}`, quarter: 4, deadline: getDeadlineDate(taxYear, 4), idx: 3 },
+    { label: 'Q1 (Jan–Mar)',      q: 1, i: 0 },
+    { label: 'Q2 (Apr–Jun)',      q: 2, i: 1 },
+    { label: 'Q3 (Jul–Sep)',      q: 3, i: 2 },
+    { label: `Annual ${year}`,    q: 4, i: 3 },
   ];
-
-  quarterlyTableBody.innerHTML = rows.map(row => {
-    const status = getStatus(row.deadline);
-    const p8     = q8[row.idx].payment;
-    const pGrad  = qGrad[row.idx].payment;
-    return `
-      <tr>
-        <td><strong>${row.label}</strong></td>
-        <td>${formatDate(row.deadline)}</td>
-        <td><span class="status-badge ${status.cls}">${status.label}</span></td>
-        <td class="col-blue">${p8 === 0 ? '—' : formatCurrency(p8)}</td>
-        <td class="col-purple">${pGrad === 0 ? '—' : formatCurrency(pGrad)}</td>
-      </tr>
-    `;
+  quarterlyBody.innerHTML = rows.map(r => {
+    const dl  = deadlineDate(year, r.q);
+    const st  = statusOf(dl);
+    const p8  = q8[r.i].payment;
+    const pG  = qGrad[r.i].payment;
+    return `<tr>
+      <td><strong>${r.label}</strong></td>
+      <td>${formatDate(dl)}</td>
+      <td><span class="status-badge ${st.cls}">${st.label}</span></td>
+      <td>${p8 === 0 ? '—' : fmt(p8)}</td>
+      <td>${pG === 0 ? '—' : fmt(pG)}</td>
+    </tr>`;
   }).join('');
 }
 
-/* ─── LATE FEES SECTION ──────────────────────────────────── */
+/* ─── LATE FEES ──────────────────────────────────────────── */
 
 function populateLateFeePeriods(q8, qGrad) {
   const periods = generateLatePeriods();
-  latePeriodSelect.innerHTML = '<option value="">— Select period —</option>';
-
+  latePeriodSel.innerHTML = '<option value="">— Select a period —</option>';
   periods.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.value;
-    opt.textContent = p.label;
-    latePeriodSelect.appendChild(opt);
+    const o = document.createElement('option');
+    o.value = p.value;
+    o.textContent = p.label;
+    latePeriodSel.appendChild(o);
   });
-
-  // Store periods on the select element for later access
-  latePeriodSelect._periods = periods;
-  latePeriodSelect._q8   = q8;
-  latePeriodSelect._qGrad = qGrad;
+  latePeriodSel._periods = periods;
+  latePeriodSel._q8      = q8;
+  latePeriodSel._qGrad   = qGrad;
 }
 
-latePeriodSelect.addEventListener('change', () => {
-  const val = latePeriodSelect.value;
+latePeriodSel.addEventListener('change', () => {
+  const val = latePeriodSel.value;
   if (!val) {
-    customTaxGroup.style.display = 'none';
-    latePeriodInfo.style.display = 'none';
-    lateFeesResult.style.display = 'none';
+    customTaxGroup.classList.add('hidden');
+    latePeriodInfo.classList.add('hidden');
+    lateResult.classList.add('hidden');
     return;
   }
-
-  const periods = latePeriodSelect._periods;
-  const period  = periods.find(p => p.value === val);
+  const period = latePeriodSel._periods.find(p => p.value === val);
   if (!period) return;
 
-  const today    = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dl = new Date(period.deadline);
-  dl.setHours(0, 0, 0, 0);
-  const daysLate = Math.max(0, Math.floor((today - dl) / (1000 * 60 * 60 * 24)));
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const dl       = new Date(period.deadline); dl.setHours(0,0,0,0);
+  const daysLate = Math.max(0, Math.floor((today - dl) / 86400000));
 
-  // Pre-fill tax from stored quarterly data
-  const q8    = latePeriodSelect._q8;
-  const qGrad = latePeriodSelect._qGrad;
+  const qi  = period.quarter - 1;
+  const q8  = latePeriodSel._q8;
+  const qG  = latePeriodSel._qGrad;
+  const use8 = current8pctAnnual <= currentGradAnnual;
+  const prefill = (use8 ? q8[qi]?.payment : qG[qi]?.payment) || 0;
 
-  // Figure out which quarter index
-  const qIndex  = period.quarter - 1; // 0-3
-  const q = period.quarter;
+  customTaxInput.value = prefill > 0 ? Math.round(prefill).toLocaleString('en-PH') : '';
+  customTaxGroup.classList.remove('hidden');
 
-  let prefillTax = 0;
-  if (q8 && q8[qIndex]) {
-    // Use whichever is lower (from the better rate), or 8% as default
-    const better8    = current8pctAnnual <= currentGradAnnual;
-    prefillTax = better8 ? (q8[qIndex]?.payment || 0) : (qGrad[qIndex]?.payment || 0);
-  }
-
-  customTaxInput.value = prefillTax > 0 ? Math.round(prefillTax).toLocaleString('en-PH') : '';
-  customTaxGroup.style.display = 'block';
-
-  // Period info
   infoPeriod.textContent   = period.periodLabel;
   infoDeadline.textContent = formatDate(period.deadline);
   infoDaysLate.textContent = daysLate + ' days';
-  latePeriodInfo.style.display = 'block';
+  latePeriodInfo.classList.remove('hidden');
 
-  // Compute and show fees if we have a tax value
-  if (prefillTax > 0) {
-    renderLateFees(prefillTax, daysLate);
-    lateFeesResult.style.display = 'block';
+  if (prefill > 0) {
+    renderLateFees(prefill, daysLate);
+    lateResult.classList.remove('hidden');
   }
 });
 
-customTaxInput.addEventListener('input', (e) => {
+customTaxInput.addEventListener('input', e => {
   const formatted = formatNumberInput(e.target.value);
   e.target.value  = formatted;
-
-  const val = latePeriodSelect.value;
+  const val = latePeriodSel.value;
   if (!val) return;
-
-  const periods  = latePeriodSelect._periods;
-  const period   = periods.find(p => p.value === val);
+  const period = latePeriodSel._periods.find(p => p.value === val);
   if (!period) return;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dl = new Date(period.deadline);
-  dl.setHours(0, 0, 0, 0);
-  const daysLate = Math.max(0, Math.floor((today - dl) / (1000 * 60 * 60 * 24)));
-
-  const taxValue = parseInputValue(formatted);
-  if (taxValue > 0) {
-    renderLateFees(taxValue, daysLate);
-    lateFeesResult.style.display = 'block';
-  } else {
-    lateFeesResult.style.display = 'none';
-  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dl    = new Date(period.deadline); dl.setHours(0,0,0,0);
+  const days  = Math.max(0, Math.floor((today - dl) / 86400000));
+  const tax   = parseInput(formatted);
+  if (tax > 0) { renderLateFees(tax, days); lateResult.classList.remove('hidden'); }
+  else           lateResult.classList.add('hidden');
 });
 
 function renderLateFees(basicTax, daysLate) {
-  const fees = computeLateFees(basicTax, daysLate);
-
-  feeBasicTax.textContent     = formatCurrency(basicTax);
-  feeSurcharge.textContent    = formatCurrency(fees.surcharge);
-  feeInterest.textContent     = formatCurrency(fees.interest);
+  const f = computeLateFees(basicTax, daysLate);
+  feeBasicTax.textContent     = fmt(basicTax);
+  feeSurcharge.textContent    = fmt(f.surcharge);
+  feeInterest.textContent     = fmt(f.interest);
   feeInterestDays.textContent = `${daysLate} days × 12% ÷ 365`;
-  feeCompromise.textContent   = formatCurrency(fees.compromise);
-
-  // Animate the total
-  const prevTotal = parseInputValue(feeTotal.textContent.replace('₱', ''));
-  animateCounter(feeTotal, fees.total);
+  feeCompromise.textContent   = fmt(f.compromise);
+  animateCounter(feeTotal, f.total);
 }
-
-/* ─── REVEAL SECTIONS ────────────────────────────────────── */
-
-function revealResults() {
-  resultsSection.classList.remove('hidden');
-  lateFeesSection.classList.remove('hidden');
-  footerEl.classList.remove('hidden');
-
-  navResults.classList.remove('hidden');
-  navLateFees.classList.remove('hidden');
-
-  // Smooth scroll to results
-  setTimeout(() => {
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
-}
-
-/* ─── SCROLL EFFECTS ─────────────────────────────────────── */
-
-window.addEventListener('scroll', () => {
-  const scrollY = window.scrollY;
-
-  // Sticky nav background
-  navEl.classList.toggle('scrolled', scrollY > 60);
-
-  // Hide scroll indicator
-  if (scrollY > 100) {
-    scrollIndicator.classList.add('hidden');
-  }
-}, { passive: true });
-
-/* ─── SMOOTH SCROLL FOR NAV LINKS ────────────────────────── */
-
-document.querySelectorAll('.js-scroll').forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    const target = document.querySelector(link.getAttribute('href'));
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-});
 
 /* ─── RESET ──────────────────────────────────────────────── */
 
-document.querySelector('.js-reset').addEventListener('click', (e) => {
+document.querySelector('.js-reset').addEventListener('click', e => {
   e.preventDefault();
-  incomeInput.value = '';
-  currentMonthly    = 0;
-  hasCalculated     = false;
+  incomeInput.value     = '';
+  currentMonthly        = 0;
+  hasCalculated         = false;
   calculateBtn.disabled = true;
   currencySign.classList.remove('active');
   incomeHint.textContent = 'Enter your average gross monthly earnings';
   document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
-
   resultsSection.classList.add('hidden');
   lateFeesSection.classList.add('hidden');
-  footerEl.classList.add('hidden');
-  navResults.classList.add('hidden');
-  navLateFees.classList.add('hidden');
-  scrollIndicator.classList.remove('hidden');
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  setTimeout(() => incomeInput.focus(), 600);
+  setTimeout(() => incomeInput.focus(), 400);
 });
 
-/* ─── MODALS ─────────────────────────────────────────────── */
+/* ─── TOC HIGHLIGHT (GUIDE) ──────────────────────────────── */
 
-document.querySelectorAll('[data-modal]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const templateId = btn.dataset.modal;
-    const tmpl = document.getElementById(templateId);
-    if (!tmpl) return;
-    modalContent.innerHTML = '';
-    modalContent.appendChild(tmpl.content.cloneNode(true));
-    modalOverlay.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-  });
-});
+function initTocHighlight() {
+  const sections = document.querySelectorAll('.guide-section');
+  const links    = document.querySelectorAll('.toc-link');
+  if (!sections.length || !links.length) return;
 
-modalClose.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', (e) => {
-  if (e.target === modalOverlay) closeModal();
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
-});
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.toc-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
 
-function closeModal() {
-  modalOverlay.classList.add('hidden');
-  document.body.style.overflow = '';
+  sections.forEach(s => obs.observe(s));
 }
 
 /* ─── FOOTER YEAR ────────────────────────────────────────── */
@@ -768,7 +559,4 @@ document.getElementById('footerYear').textContent = new Date().getFullYear();
 
 /* ─── INIT ───────────────────────────────────────────────── */
 
-// Focus income input on load
-window.addEventListener('load', () => {
-  incomeInput.focus();
-});
+window.addEventListener('load', () => incomeInput.focus());

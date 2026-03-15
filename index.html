@@ -3,363 +3,672 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PH Freelancer Tax Calculator — Know What You Owe</title>
-  <meta name="description" content="Free tax calculator for Filipino freelancers and virtual assistants. Compare 8% flat rate vs graduated tax, see quarterly breakdowns, and calculate late filing penalties." />
+  <title>PH Freelancer Tax Calculator</title>
+  <meta name="description" content="Free tax calculator for Filipino freelancers and VAs. Compare 8% vs graduated rates, quarterly schedule, and late filing penalties." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- ─── NAV ─────────────────────────────────────────── -->
-  <nav class="nav" id="nav">
-    <div class="nav-inner">
-      <div class="nav-brand">
-        <span class="nav-logo">₱</span>
-        <span class="nav-name">TaxCalc<span class="nav-ph">PH</span></span>
-      </div>
-      <div class="nav-links" id="navLinks">
-        <a href="#results-section" class="nav-link js-scroll hidden" id="navResults">Results</a>
-        <a href="#late-fees-section" class="nav-link js-scroll hidden" id="navLateFees">Late Fees</a>
-        <a href="#" class="nav-cta js-reset">Reset</a>
-      </div>
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="#">₱ TaxCalcPH</a>
+      <nav class="tab-nav" role="tablist">
+        <button class="tab-btn active" data-tab="calculator" role="tab" aria-selected="true">Calculator</button>
+        <button class="tab-btn" data-tab="guide" role="tab" aria-selected="false">Tax Guide</button>
+      </nav>
+      <button class="reset-btn js-reset">New calc</button>
     </div>
-  </nav>
+  </header>
 
-  <!-- ─── HERO / INPUT ────────────────────────────────── -->
-  <section class="hero" id="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-content">
-      <div class="hero-badge">🇵🇭 Built for Filipino Freelancers & VAs</div>
-      <h1 class="hero-title">Know exactly<br/><span class="hero-gradient-text">what you owe.</span></h1>
-      <p class="hero-subtitle">Enter your monthly income and instantly see your quarterly BIR taxes under both the <strong>8% flat rate</strong> and the <strong>graduated rate</strong> — plus late filing penalties.</p>
+  <main>
 
-      <div class="income-card" id="incomeCard">
-        <div class="income-card-inner">
-          <label class="income-label" for="incomeInput">Monthly Income</label>
-          <div class="income-input-wrap">
-            <span class="income-currency" id="currencySign">₱</span>
-            <input
-              type="text"
-              id="incomeInput"
-              class="income-input"
-              placeholder="0"
-              inputmode="numeric"
-              autocomplete="off"
-              maxlength="14"
-            />
+    <!-- ═══════════════════════════════════════════════════════
+         CALCULATOR TAB
+    ════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="panel-calculator" role="tabpanel">
+
+      <!-- Input -->
+      <section class="input-section">
+        <div class="container-sm">
+          <p class="eyebrow">Filipino Freelancer &amp; VA Tax Calculator</p>
+          <h1 class="input-title">How much do you earn monthly?</h1>
+          <p class="input-sub">We'll show you exactly what to pay under both BIR-approved tax rates.</p>
+
+          <div class="income-field-wrap">
+            <div class="income-field" id="incomeField">
+              <span class="income-prefix" id="currencySign">₱</span>
+              <input
+                type="text"
+                id="incomeInput"
+                class="income-input"
+                placeholder="0"
+                inputmode="numeric"
+                autocomplete="off"
+                maxlength="14"
+                aria-label="Monthly income in Philippine Peso"
+              />
+            </div>
+            <p class="income-hint" id="incomeHint">Enter your average gross monthly earnings</p>
           </div>
-          <p class="income-hint" id="incomeHint">Enter your average gross monthly earnings</p>
 
-          <div class="income-quick-picks">
-            <span class="quick-label">Quick pick:</span>
-            <button class="quick-btn" data-amount="25000">₱25k</button>
-            <button class="quick-btn" data-amount="50000">₱50k</button>
-            <button class="quick-btn" data-amount="100000">₱100k</button>
-            <button class="quick-btn" data-amount="200000">₱200k</button>
+          <div class="quick-picks">
+            <button class="quick-btn" data-amount="25000">₱25,000</button>
+            <button class="quick-btn" data-amount="50000">₱50,000</button>
+            <button class="quick-btn" data-amount="100000">₱100,000</button>
+            <button class="quick-btn" data-amount="200000">₱200,000</button>
           </div>
 
           <button class="calculate-btn" id="calculateBtn" disabled>
-            <span class="btn-text">Calculate My Taxes</span>
-            <span class="btn-arrow">→</span>
+            Calculate my taxes
           </button>
+
+          <p class="privacy-note">Calculations happen in your browser. Nothing is stored or sent anywhere.</p>
         </div>
-      </div>
+      </section>
 
-      <p class="hero-note">No data is stored. All calculations happen in your browser.</p>
-    </div>
+      <!-- Results -->
+      <section class="results-section hidden" id="results-section">
+        <div class="container">
 
-    <div class="hero-scroll-indicator" id="scrollIndicator">
-      <span>Scroll to see results</span>
-      <div class="scroll-arrow">↓</div>
-    </div>
-  </section>
-
-  <!-- ─── RESULTS ──────────────────────────────────────── -->
-  <section class="results-section hidden" id="results-section">
-
-    <!-- Annual Summary Bar -->
-    <div class="summary-bar" id="summaryBar">
-      <div class="summary-bar-inner">
-        <div class="summary-item">
-          <span class="summary-label">Annual Income</span>
-          <span class="summary-value" id="summaryAnnual">—</span>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="summary-item">
-          <span class="summary-label">8% Rate Tax</span>
-          <span class="summary-value accent-blue" id="summaryTax8">—</span>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="summary-item">
-          <span class="summary-label">Graduated Tax</span>
-          <span class="summary-value accent-purple" id="summaryTaxGrad">—</span>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="summary-item">
-          <span class="summary-label">You Save With</span>
-          <span class="summary-value accent-green" id="summarySave">—</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="results-container">
-      <div class="section-header">
-        <h2 class="section-title">Your Tax Comparison</h2>
-        <p class="section-sub" id="taxYearLabel">Based on current income</p>
-      </div>
-
-      <!-- Rate Cards -->
-      <div class="rate-cards" id="rateCards">
-
-        <!-- 8% Card -->
-        <div class="rate-card" id="card8">
-          <div class="rate-card-header">
-            <div class="rate-badge badge-blue">8% Flat Rate</div>
-            <div class="rate-tag" id="tag8"></div>
-          </div>
-          <div class="rate-tax-amount">
-            <span class="rate-label">Annual Tax</span>
-            <span class="rate-value" id="tax8Annual">₱0</span>
-          </div>
-          <div class="rate-monthly">
-            <span class="rate-monthly-label">Effective monthly set-aside</span>
-            <span class="rate-monthly-value" id="tax8Monthly">₱0/mo</span>
-          </div>
-          <div class="rate-divider"></div>
-          <div class="rate-how">
-            <p class="rate-how-title">How it's computed</p>
-            <div class="rate-formula" id="formula8"></div>
-          </div>
-          <div class="rate-divider"></div>
-          <div class="quarterly-timeline" id="timeline8"></div>
-          <div class="rate-cta">
-            <button class="info-btn" data-modal="modal8pct">Learn about 8% rate →</button>
-          </div>
-        </div>
-
-        <!-- Graduated Card -->
-        <div class="rate-card" id="cardGrad">
-          <div class="rate-card-header">
-            <div class="rate-badge badge-purple">Graduated Rate</div>
-            <div class="rate-tag" id="tagGrad"></div>
-          </div>
-          <div class="rate-tax-amount">
-            <span class="rate-label">Annual Tax</span>
-            <span class="rate-value" id="taxGradAnnual">₱0</span>
-          </div>
-          <div class="rate-monthly">
-            <span class="rate-monthly-label">Effective monthly set-aside</span>
-            <span class="rate-monthly-value" id="taxGradMonthly">₱0/mo</span>
-          </div>
-          <div class="rate-divider"></div>
-          <div class="rate-how">
-            <p class="rate-how-title">How it's computed</p>
-            <div class="rate-formula" id="formulaGrad"></div>
-          </div>
-          <div class="rate-divider"></div>
-          <div class="quarterly-timeline" id="timelineGrad"></div>
-          <div class="rate-cta">
-            <button class="info-btn" data-modal="modalGrad">Learn about graduated rate →</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Recommendation Banner -->
-      <div class="recommendation-banner" id="recommendationBanner">
-        <div class="rec-icon">💡</div>
-        <div class="rec-content">
-          <p class="rec-title" id="recTitle">—</p>
-          <p class="rec-detail" id="recDetail">—</p>
-        </div>
-      </div>
-
-      <!-- Quarterly Schedule -->
-      <div class="quarterly-section">
-        <h3 class="quarterly-title">Quarterly Filing Schedule</h3>
-        <p class="quarterly-sub">When to file and how much to pay each quarter (BIR Form 1701Q)</p>
-        <div class="quarterly-table-wrap">
-          <table class="quarterly-table" id="quarterlyTable">
-            <thead>
-              <tr>
-                <th>Period</th>
-                <th>Deadline</th>
-                <th>Status</th>
-                <th class="col-blue">8% Rate</th>
-                <th class="col-purple">Graduated</th>
-              </tr>
-            </thead>
-            <tbody id="quarterlyTableBody"></tbody>
-          </table>
-        </div>
-        <p class="quarterly-note">* Annual ITR (BIR Form 1701) is due April 15 every year. Quarterly payments are credited against your annual tax due.</p>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ─── LATE FEES ─────────────────────────────────────── -->
-  <section class="late-fees-section hidden" id="late-fees-section">
-    <div class="results-container">
-
-      <div class="section-header">
-        <h2 class="section-title">Late Filing Calculator</h2>
-        <p class="section-sub">Missed a deadline? See exactly how much you owe including BIR penalties.</p>
-      </div>
-
-      <div class="late-fees-grid">
-
-        <div class="late-fees-form card">
-          <h3 class="card-title">Select Filing Period</h3>
-
-          <div class="form-group">
-            <label class="form-label">Which period are you filing for?</label>
-            <select class="form-select" id="latePeriodSelect">
-              <option value="">— Select period —</option>
-            </select>
-          </div>
-
-          <div class="form-group" id="customTaxGroup" style="display:none">
-            <label class="form-label">Tax due for this period (₱)</label>
-            <div class="form-input-wrap">
-              <span class="form-currency">₱</span>
-              <input type="text" class="form-input" id="customTaxInput" placeholder="0" inputmode="numeric" />
+          <!-- Stats row -->
+          <div class="stats-row" id="statsRow">
+            <div class="stat">
+              <span class="stat-label">Annual Income</span>
+              <span class="stat-value" id="summaryAnnual">—</span>
             </div>
-            <p class="form-hint">Pre-filled from your calculation above. You can adjust this.</p>
-          </div>
-
-          <div class="late-period-info card-inner" id="latePeriodInfo" style="display:none">
-            <div class="period-info-row">
-              <span class="info-label">Period</span>
-              <span class="info-value" id="infoPeriod">—</span>
+            <div class="stat-sep"></div>
+            <div class="stat">
+              <span class="stat-label">8% Rate — Annual Tax</span>
+              <span class="stat-value" id="summaryTax8">—</span>
             </div>
-            <div class="period-info-row">
-              <span class="info-label">Deadline</span>
-              <span class="info-value" id="infoDeadline">—</span>
+            <div class="stat-sep"></div>
+            <div class="stat">
+              <span class="stat-label">Graduated Rate — Annual Tax</span>
+              <span class="stat-value" id="summaryTaxGrad">—</span>
             </div>
-            <div class="period-info-row">
-              <span class="info-label">Days Late</span>
-              <span class="info-value accent-red" id="infoDaysLate">—</span>
+            <div class="stat-sep"></div>
+            <div class="stat">
+              <span class="stat-label">Lower rate for you</span>
+              <span class="stat-value stat-winner" id="summarySave">—</span>
             </div>
           </div>
-        </div>
 
-        <div class="late-fees-results card" id="lateFeesResult" style="display:none">
-          <h3 class="card-title">Penalty Breakdown</h3>
+          <!-- Rate cards -->
+          <div class="rate-grid">
 
-          <div class="fee-breakdown">
-            <div class="fee-row">
-              <div class="fee-info">
-                <span class="fee-name">Basic Tax Due</span>
-                <span class="fee-desc">Original tax before penalties</span>
+            <!-- 8% Card -->
+            <div class="rate-card" id="card8">
+              <div class="rate-card-top">
+                <div>
+                  <div class="rate-name">8% Flat Rate</div>
+                  <div class="rate-winner-tag hidden" id="tag8">Saves you more ↑</div>
+                </div>
+                <div class="rate-amount-block">
+                  <span class="rate-amount-label">Annual tax</span>
+                  <span class="rate-amount" id="tax8Annual">₱0</span>
+                  <span class="rate-monthly" id="tax8Monthly">₱0 / month</span>
+                </div>
               </div>
-              <span class="fee-amount" id="feeBasicTax">₱0</span>
-            </div>
-            <div class="fee-divider"></div>
-            <div class="fee-row">
-              <div class="fee-info">
-                <span class="fee-name">Surcharge (25%)</span>
-                <span class="fee-desc">One-time penalty for late filing</span>
+
+              <div class="rate-divider"></div>
+
+              <div class="rate-formula-block">
+                <p class="block-label">Computation</p>
+                <div id="formula8" class="formula-rows"></div>
               </div>
-              <span class="fee-amount accent-orange" id="feeSurcharge">₱0</span>
-            </div>
-            <div class="fee-row">
-              <div class="fee-info">
-                <span class="fee-name">Interest (12% p.a.)</span>
-                <span class="fee-desc" id="feeInterestDays">0 days × 12% ÷ 365</span>
+
+              <div class="rate-divider"></div>
+
+              <div class="rate-schedule-block">
+                <p class="block-label">Quarterly payments</p>
+                <div id="timeline8" class="schedule-rows"></div>
               </div>
-              <span class="fee-amount accent-orange" id="feeInterest">₱0</span>
             </div>
-            <div class="fee-row">
-              <div class="fee-info">
-                <span class="fee-name">Compromise Penalty</span>
-                <span class="fee-desc">BIR administrative penalty</span>
+
+            <!-- Graduated Card -->
+            <div class="rate-card" id="cardGrad">
+              <div class="rate-card-top">
+                <div>
+                  <div class="rate-name">Graduated Rate <span class="rate-name-note">+ 40% OSD</span></div>
+                  <div class="rate-winner-tag hidden" id="tagGrad">Saves you more ↑</div>
+                </div>
+                <div class="rate-amount-block">
+                  <span class="rate-amount-label">Annual tax</span>
+                  <span class="rate-amount" id="taxGradAnnual">₱0</span>
+                  <span class="rate-monthly" id="taxGradMonthly">₱0 / month</span>
+                </div>
               </div>
-              <span class="fee-amount accent-orange" id="feeCompromise">₱0</span>
-            </div>
-            <div class="fee-divider"></div>
-            <div class="fee-row fee-total">
-              <div class="fee-info">
-                <span class="fee-name">Total Amount Due</span>
-                <span class="fee-desc">Pay this amount to clear your obligation</span>
+
+              <div class="rate-divider"></div>
+
+              <div class="rate-formula-block">
+                <p class="block-label">Computation</p>
+                <div id="formulaGrad" class="formula-rows"></div>
               </div>
-              <span class="fee-amount fee-total-amount" id="feeTotal">₱0</span>
+
+              <div class="rate-divider"></div>
+
+              <div class="rate-schedule-block">
+                <p class="block-label">Quarterly payments</p>
+                <div id="timelineGrad" class="schedule-rows"></div>
+              </div>
             </div>
+
+          </div><!-- /rate-grid -->
+
+          <!-- Recommendation -->
+          <div class="recommendation" id="recommendationBanner">
+            <span class="rec-label">Our take</span>
+            <p class="rec-title" id="recTitle">—</p>
+            <p class="rec-detail" id="recDetail">—</p>
           </div>
 
-          <div class="late-action-note">
-            <span class="note-icon">⚠️</span>
-            <p>File and pay immediately at any BIR office or via eFPS/eBIRForms to stop further interest from accumulating.</p>
+          <!-- Quarterly filing table -->
+          <div class="quarterly-block">
+            <div class="block-header">
+              <h2 class="block-title">Filing schedule — <span id="taxYearLabel">current year</span></h2>
+              <p class="block-desc">Deadlines and how much to pay each quarter using BIR Form 1701Q</p>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>8% Rate</th>
+                    <th>Graduated</th>
+                  </tr>
+                </thead>
+                <tbody id="quarterlyTableBody"></tbody>
+              </table>
+            </div>
+            <p class="table-note">Annual ITR (Form 1701) is due April 15 each year. Quarterly payments are credited when you file annually.</p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Late Fees -->
+      <section class="late-section hidden" id="late-fees-section">
+        <div class="container">
+          <div class="block-header">
+            <h2 class="block-title">Late filing calculator</h2>
+            <p class="block-desc">Missed a deadline? Calculate your BIR penalties to the day.</p>
+          </div>
+
+          <div class="late-grid">
+
+            <div class="late-form">
+              <div class="form-group">
+                <label class="form-label" for="latePeriodSelect">Which period are you filing for?</label>
+                <select class="form-select" id="latePeriodSelect">
+                  <option value="">— Select a period —</option>
+                </select>
+              </div>
+
+              <div id="customTaxGroup" class="form-group hidden">
+                <label class="form-label" for="customTaxInput">Tax due for this period</label>
+                <div class="form-input-row">
+                  <span class="form-prefix">₱</span>
+                  <input type="text" class="form-input" id="customTaxInput" placeholder="0" inputmode="numeric" />
+                </div>
+                <p class="form-hint">Pre-filled from your calculation. Adjust if needed.</p>
+              </div>
+
+              <div class="period-info hidden" id="latePeriodInfo">
+                <div class="info-row">
+                  <span class="info-key">Period</span>
+                  <span class="info-val" id="infoPeriod">—</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-key">Deadline</span>
+                  <span class="info-val" id="infoDeadline">—</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-key">Days late</span>
+                  <span class="info-val text-red" id="infoDaysLate">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="late-result hidden" id="lateFeesResult">
+              <p class="block-label">Penalty breakdown</p>
+              <div class="fee-list">
+                <div class="fee-row">
+                  <div class="fee-meta">
+                    <span class="fee-name">Basic tax due</span>
+                    <span class="fee-desc">Original tax before penalties</span>
+                  </div>
+                  <span class="fee-val" id="feeBasicTax">₱0</span>
+                </div>
+                <div class="fee-sep"></div>
+                <div class="fee-row">
+                  <div class="fee-meta">
+                    <span class="fee-name">Surcharge — 25%</span>
+                    <span class="fee-desc">One-time late filing penalty</span>
+                  </div>
+                  <span class="fee-val text-red" id="feeSurcharge">₱0</span>
+                </div>
+                <div class="fee-row">
+                  <div class="fee-meta">
+                    <span class="fee-name">Interest — 12% p.a.</span>
+                    <span class="fee-desc" id="feeInterestDays">— days × 12% ÷ 365</span>
+                  </div>
+                  <span class="fee-val text-red" id="feeInterest">₱0</span>
+                </div>
+                <div class="fee-row">
+                  <div class="fee-meta">
+                    <span class="fee-name">Compromise penalty</span>
+                    <span class="fee-desc">BIR administrative charge</span>
+                  </div>
+                  <span class="fee-val text-red" id="feeCompromise">₱0</span>
+                </div>
+                <div class="fee-sep"></div>
+                <div class="fee-row fee-total-row">
+                  <div class="fee-meta">
+                    <span class="fee-name">Total amount due</span>
+                  </div>
+                  <span class="fee-val fee-total" id="feeTotal">₱0</span>
+                </div>
+              </div>
+              <p class="late-warning">File and pay at any BIR office or via eFPS/eBIRForms to stop interest from growing.</p>
+            </div>
+
           </div>
         </div>
+      </section>
 
+    </div><!-- /panel-calculator -->
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAX GUIDE TAB
+    ════════════════════════════════════════════════════════ -->
+    <div class="tab-panel hidden" id="panel-guide" role="tabpanel">
+      <div class="guide-layout">
+
+        <!-- TOC sidebar -->
+        <aside class="guide-toc">
+          <p class="toc-label">On this page</p>
+          <nav>
+            <a class="toc-link" href="#g-overview">Overview</a>
+            <a class="toc-link" href="#g-register">BIR Registration</a>
+            <a class="toc-link" href="#g-8pct">The 8% Rate</a>
+            <a class="toc-link" href="#g-graduated">Graduated Rate</a>
+            <a class="toc-link" href="#g-osd">Optional Standard Deduction</a>
+            <a class="toc-link" href="#g-quarterly">Quarterly Filing (1701Q)</a>
+            <a class="toc-link" href="#g-annual">Annual ITR (1701)</a>
+            <a class="toc-link" href="#g-percentage">Percentage Tax</a>
+            <a class="toc-link" href="#g-penalties">Late Filing Penalties</a>
+            <a class="toc-link" href="#g-comparison">Which rate is for you?</a>
+            <a class="toc-link" href="#g-faq">FAQ</a>
+          </nav>
+        </aside>
+
+        <!-- Guide content -->
+        <article class="guide-content">
+
+          <header class="guide-header">
+            <p class="eyebrow">Tax Guide 2024–2025</p>
+            <h1 class="guide-title">Taxes for Filipino Freelancers &amp; Virtual Assistants</h1>
+            <p class="guide-lead">A plain-language walkthrough of every tax obligation you have as a self-employed professional in the Philippines — what to file, when to file it, and how much to pay.</p>
+          </header>
+
+          <!-- Overview -->
+          <section class="guide-section" id="g-overview">
+            <h2>Overview</h2>
+            <p>If you earn income as a freelancer, virtual assistant, online worker, or independent contractor in the Philippines, you are considered <strong>self-employed</strong> under the Bureau of Internal Revenue (BIR). This means you are responsible for computing and paying your own taxes — your clients do not withhold anything on your behalf (unless you are hired locally).</p>
+            <p>As a self-employed individual, you are generally subject to two types of taxes:</p>
+            <ol>
+              <li><strong>Income Tax</strong> — paid quarterly and annually (BIR Forms 1701Q and 1701)</li>
+              <li><strong>Percentage Tax</strong> — paid quarterly if your gross receipts are below ₱3 million (BIR Form 2551Q), <em>unless you opted for the 8% flat rate</em></li>
+            </ol>
+            <div class="callout callout-blue">
+              <strong>Good news:</strong> If you choose the 8% income tax rate, the percentage tax is automatically replaced. You only file one type of tax instead of two.
+            </div>
+          </section>
+
+          <!-- BIR Registration -->
+          <section class="guide-section" id="g-register">
+            <h2>BIR Registration</h2>
+            <p>Before you can legally operate as a freelancer in the Philippines, you must register with the BIR. Here's how:</p>
+            <ol>
+              <li><strong>Get a TIN (Tax Identification Number)</strong> — If you've been employed before, you already have one. Never get a second TIN; it's illegal.</li>
+              <li><strong>Register as self-employed</strong> — File BIR Form 1901 at the Revenue District Office (RDO) that has jurisdiction over your home address.</li>
+              <li><strong>Choose your tax regime</strong> — Indicate whether you want the 8% flat rate or the graduated rate on Form 1901 (or on your first 1701Q of the year).</li>
+              <li><strong>Register your books of accounts</strong> — You are required to maintain records of your income and expenses. A simple cashbook or spreadsheet is acceptable for most freelancers.</li>
+              <li><strong>Get an Authority to Print (ATP) or register official receipts</strong> — You need to issue Official Receipts (OR) to your clients for all payments received.</li>
+            </ol>
+            <div class="callout callout-yellow">
+              <strong>Note:</strong> Many online freelancers skip BIR registration. This is technically illegal and can result in penalties. Registration is simple and costs very little.
+            </div>
+          </section>
+
+          <!-- 8% Rate -->
+          <section class="guide-section" id="g-8pct">
+            <h2>The 8% Income Tax Rate</h2>
+            <p>Introduced by the TRAIN Law (Republic Act 10963) in 2018, the 8% option is designed to simplify tax compliance for self-employed individuals.</p>
+
+            <h3>How it works</h3>
+            <p>You pay <strong>8% of your gross income or receipts</strong> (minus the first ₱250,000, which is exempt). This replaces both income tax <em>and</em> percentage tax.</p>
+            <div class="formula-box">
+              Annual Tax = (Gross Annual Income − ₱250,000) × 8%
+            </div>
+
+            <h3>Who can use it?</h3>
+            <ul>
+              <li>Self-employed individuals and professionals (freelancers, VAs, consultants, etc.)</li>
+              <li>Your annual gross income must <strong>not exceed ₱3,000,000</strong></li>
+              <li>You must <strong>not be VAT-registered</strong></li>
+              <li>You must not derive income from mixed employment and self-employment at the same time (unless your employer already excludes compensation from the election)</li>
+            </ul>
+
+            <h3>Key benefits</h3>
+            <ul>
+              <li>No need to track business expenses for deductions</li>
+              <li>Replaces the 3% percentage tax — fewer forms to file</li>
+              <li>Simple and predictable — good for budgeting</li>
+            </ul>
+
+            <h3>How to elect the 8% rate</h3>
+            <p>Indicate your election on your first quarterly return (1701Q) for the year, or on BIR Form 1901 at registration. Once elected, it applies for the entire calendar year.</p>
+
+            <div class="callout callout-blue">
+              <strong>Important:</strong> If your income exceeds ₱3,000,000 during the year, you must switch to the graduated rate for that year and pay percentage tax starting from the quarter when you exceeded the threshold.
+            </div>
+          </section>
+
+          <!-- Graduated Rate -->
+          <section class="guide-section" id="g-graduated">
+            <h2>The Graduated Income Tax Rate</h2>
+            <p>This is the traditional tax system where your tax rate increases as your income grows. It uses a bracket system applied to your <em>net taxable income</em> (after deductions).</p>
+
+            <h3>2024 Tax Brackets (TRAIN Law)</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Net Taxable Income</th>
+                    <th>Tax Due</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>₱0 – ₱250,000</td><td>0%</td></tr>
+                  <tr><td>₱250,001 – ₱400,000</td><td>₱0 + 15% of excess over ₱250,000</td></tr>
+                  <tr><td>₱400,001 – ₱800,000</td><td>₱22,500 + 20% of excess over ₱400,000</td></tr>
+                  <tr><td>₱800,001 – ₱2,000,000</td><td>₱102,500 + 25% of excess over ₱800,000</td></tr>
+                  <tr><td>₱2,000,001 – ₱8,000,000</td><td>₱402,500 + 30% of excess over ₱2,000,000</td></tr>
+                  <tr><td>Over ₱8,000,000</td><td>₱2,202,500 + 35% of excess over ₱8,000,000</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>What counts as "net taxable income"?</h3>
+            <p>Net taxable income = Gross Income − Allowable Deductions. Self-employed individuals can choose between:</p>
+            <ul>
+              <li><strong>Itemized deductions</strong> — Deduct your actual business expenses with receipts and documentation</li>
+              <li><strong>Optional Standard Deduction (OSD)</strong> — Deduct a flat 40% of gross income automatically, no receipts required</li>
+            </ul>
+            <p>Most freelancers and VAs use OSD because it's simpler and often results in a lower tax than itemizing.</p>
+
+            <div class="callout callout-yellow">
+              <strong>Note:</strong> Under the graduated rate, you are still required to file and pay the 3% Percentage Tax (Form 2551Q) separately each quarter — unless you are VAT-registered.
+            </div>
+          </section>
+
+          <!-- OSD -->
+          <section class="guide-section" id="g-osd">
+            <h2>Optional Standard Deduction (OSD)</h2>
+            <p>OSD is the simplest way to reduce your taxable income under the graduated rate. You deduct <strong>40% of your gross receipts or gross income</strong> — no itemization, no receipts, no documentation required.</p>
+
+            <div class="formula-box">
+              Net Taxable Income = Gross Annual Income × (1 − 40%) = Gross × 60%
+            </div>
+
+            <p>For example, if you earn ₱600,000/year:</p>
+            <ul>
+              <li>OSD deduction = ₱600,000 × 40% = ₱240,000</li>
+              <li>Net taxable income = ₱600,000 − ₱240,000 = ₱360,000</li>
+              <li>Tax on ₱360,000 = ₱0 (first ₱250,000) + (₱360,000 − ₱250,000) × 15% = ₱16,500</li>
+            </ul>
+
+            <h3>How to elect OSD</h3>
+            <p>Indicate your election on your first quarterly return (1701Q) for the year. Once elected, it applies for the entire calendar year and cannot be changed to itemized deductions mid-year.</p>
+          </section>
+
+          <!-- Quarterly Filing -->
+          <section class="guide-section" id="g-quarterly">
+            <h2>Quarterly Tax Filing — BIR Form 1701Q</h2>
+            <p>Self-employed individuals must file quarterly income tax returns (Form 1701Q) for the first three quarters of the year. These are advance payments credited against your annual tax due.</p>
+
+            <h3>Filing deadlines</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Quarter</th><th>Period Covered</th><th>Deadline</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1st Quarter</td><td>January – March</td><td>May 15</td></tr>
+                  <tr><td>2nd Quarter</td><td>January – June (cumulative)</td><td>August 15</td></tr>
+                  <tr><td>3rd Quarter</td><td>January – September (cumulative)</td><td>November 15</td></tr>
+                  <tr><td>Annual ITR</td><td>Full year</td><td>April 15 (next year)</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>Cumulative method</h3>
+            <p>Quarterly filings use a <strong>cumulative method</strong>: each quarter you report total income from January to date, compute the total tax, then subtract what you've already paid in previous quarters. This means:</p>
+            <ul>
+              <li>Q1: Pay tax on income from Jan–Mar only</li>
+              <li>Q2: Pay tax on Jan–Jun income, minus what you paid in Q1</li>
+              <li>Q3: Pay tax on Jan–Sep income, minus Q1 + Q2 payments</li>
+              <li>Annual: Pay the remaining balance (or get a refund if you overpaid)</li>
+            </ul>
+            <p>If your income is steady throughout the year, the 8% exemption (₱250,000) may cause your Q1 payment to be ₱0, with payments increasing in Q2 and Q3.</p>
+          </section>
+
+          <!-- Annual ITR -->
+          <section class="guide-section" id="g-annual">
+            <h2>Annual Income Tax Return — BIR Form 1701</h2>
+            <p>At the end of each tax year, you file Form 1701 to reconcile your total income and tax for the full year. All quarterly payments made throughout the year are credited here.</p>
+
+            <h3>Deadline</h3>
+            <p><strong>April 15</strong> of the following year (e.g., April 15, 2025 for tax year 2024).</p>
+
+            <h3>What happens at filing</h3>
+            <ul>
+              <li>If your quarterly payments exceed your actual annual tax — you get a <strong>refund or tax credit</strong></li>
+              <li>If your quarterly payments are less than your actual annual tax — you pay the <strong>balance due</strong></li>
+            </ul>
+
+            <h3>Form 1701 vs 1701A</h3>
+            <ul>
+              <li><strong>Form 1701</strong> — For taxpayers who have mixed income (employment + self-employment) or are using itemized deductions</li>
+              <li><strong>Form 1701A</strong> — Simplified form for purely self-employed individuals using OSD or the 8% rate</li>
+            </ul>
+            <p>Most freelancers with no day job will use Form 1701A.</p>
+          </section>
+
+          <!-- Percentage Tax -->
+          <section class="guide-section" id="g-percentage">
+            <h2>Percentage Tax — BIR Form 2551Q</h2>
+            <p>If you are under the graduated rate and your annual gross income is below ₱3,000,000, you must also pay a <strong>3% percentage tax</strong> on your gross receipts each quarter.</p>
+
+            <div class="formula-box">
+              Quarterly Percentage Tax = Gross Receipts for the Quarter × 3%
+            </div>
+
+            <h3>Filing deadlines</h3>
+            <p>Form 2551Q is due on the <strong>25th day of the month</strong> following the end of each quarter:</p>
+            <ul>
+              <li>Q1 (Jan–Mar): Due April 25</li>
+              <li>Q2 (Apr–Jun): Due July 25</li>
+              <li>Q3 (Jul–Sep): Due October 25</li>
+              <li>Q4 (Oct–Dec): Due January 25 (next year)</li>
+            </ul>
+
+            <div class="callout callout-blue">
+              <strong>If you elected the 8% rate:</strong> You do NOT file Form 2551Q. The 8% rate already replaces the percentage tax. This saves you one filing per quarter.
+            </div>
+          </section>
+
+          <!-- Late Filing Penalties -->
+          <section class="guide-section" id="g-penalties">
+            <h2>Late Filing Penalties</h2>
+            <p>Filing or paying taxes late incurs three separate penalties that compound the longer you wait.</p>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Penalty</th><th>Rate</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Surcharge</strong></td>
+                    <td>25% of basic tax</td>
+                    <td>One-time charge. Imposed the moment you file late.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Interest</strong></td>
+                    <td>12% per annum</td>
+                    <td>Computed daily: Basic Tax × 12% × (Days Late ÷ 365)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Compromise Penalty</strong></td>
+                    <td>₱200 – ₱50,000</td>
+                    <td>BIR administrative penalty based on the amount of tax due</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>Compromise penalty schedule</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Basic Tax Due</th><th>Compromise Penalty</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Up to ₱1,000</td><td>₱200</td></tr>
+                  <tr><td>₱1,001 – ₱5,000</td><td>₱500</td></tr>
+                  <tr><td>₱5,001 – ₱20,000</td><td>₱1,000</td></tr>
+                  <tr><td>₱20,001 – ₱50,000</td><td>₱2,000</td></tr>
+                  <tr><td>₱50,001 – ₱100,000</td><td>₱5,000</td></tr>
+                  <tr><td>₱100,001 – ₱500,000</td><td>₱10,000</td></tr>
+                  <tr><td>₱500,001 – ₱1,000,000</td><td>₱20,000</td></tr>
+                  <tr><td>Over ₱1,000,000</td><td>₱50,000</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>Example: Filing 90 days late with ₱10,000 tax due</h3>
+            <ul>
+              <li>Surcharge: ₱10,000 × 25% = <strong>₱2,500</strong></li>
+              <li>Interest: ₱10,000 × 12% × (90 ÷ 365) = <strong>₱295.89</strong></li>
+              <li>Compromise: <strong>₱1,000</strong></li>
+              <li>Total: <strong>₱13,795.89</strong> (38% more than the original tax)</li>
+            </ul>
+
+            <div class="callout callout-red">
+              <strong>Don't wait.</strong> The longer you delay, the more the interest grows. File immediately even if you can't pay the full amount — at least the surcharge stops applying to future months.
+            </div>
+          </section>
+
+          <!-- Comparison -->
+          <section class="guide-section" id="g-comparison">
+            <h2>Which rate is better for you?</h2>
+            <p>The right choice depends on your income level and whether you have significant business expenses.</p>
+
+            <h3>8% is usually better when:</h3>
+            <ul>
+              <li>Your annual income is between ₱250,000 and ~₱720,000</li>
+              <li>You have low or no business expenses to deduct</li>
+              <li>You want simplicity and fewer filings</li>
+              <li>You earn entirely through foreign clients (USD, AUD, EUR payments)</li>
+            </ul>
+
+            <h3>Graduated + OSD is usually better when:</h3>
+            <ul>
+              <li>Your annual income is below ₱250,000 (you'd pay 0% — but you still must file)</li>
+              <li>Your income is in the mid-to-high range and the bracket math results in a lower effective rate than 8%</li>
+              <li>You have mixed income with an employer (the 8% election rules become more complex)</li>
+            </ul>
+
+            <h3>The crossover point</h3>
+            <p>At roughly <strong>₱720,000 – ₱750,000</strong> in annual gross income, the two rates tend to produce a similar tax amount. Below this, graduated + OSD is often cheaper. Above this, the 8% flat rate may be better — but use the calculator above to check your exact figures, as the crossover shifts based on which brackets your net income falls into.</p>
+
+            <div class="callout callout-blue">
+              Use the <button class="inline-tab-link" data-tab="calculator">Calculator tab</button> to see the exact numbers for your income — the recommendation updates automatically.
+            </div>
+          </section>
+
+          <!-- FAQ -->
+          <section class="guide-section" id="g-faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-list">
+              <details class="faq-item">
+                <summary>Do I really need to pay taxes if I'm just a VA and my client is abroad?</summary>
+                <p>Yes. Philippine income tax applies to all income earned by Philippine residents, regardless of the client's location or the currency of payment. If you are residing in the Philippines, your freelance earnings are taxable here.</p>
+              </details>
+
+              <details class="faq-item">
+                <summary>I've never registered. Is it too late?</summary>
+                <p>No. You can register with the BIR at any time. You will need to pay any back taxes and penalties for unreported income, but voluntary disclosure is always treated better than being caught in an audit. Many freelancers use a CPA to help regularize their standing.</p>
+              </details>
+
+              <details class="faq-item">
+                <summary>What if I earn below ₱250,000 a year?</summary>
+                <p>Under the graduated rate, your income tax is ₱0. Under the 8% rate, you also pay ₱0 (since the first ₱250,000 is exempt). However, you are still required to register with the BIR and file your returns — just with no tax due. You may still owe percentage tax (3%) under the graduated rate.</p>
+              </details>
+
+              <details class="faq-item">
+                <summary>My income varies month to month. What should I enter in the calculator?</summary>
+                <p>Enter your best estimate of your average monthly income. For an accurate annual picture, use your total expected annual income divided by 12. If your income fluctuates significantly, consider running the calculation at both your highest and lowest expected income to see the range.</p>
+              </details>
+
+              <details class="faq-item">
+                <summary>Can I switch between 8% and graduated every year?</summary>
+                <p>Yes. Your election applies for one tax year. You can choose a different rate when you file your first 1701Q for the following year. This lets you pick whichever rate is more beneficial for your projected income each year.</p>
+              </details>
+
+              <details class="faq-item">
+                <summary>What is eFPS and eBIRForms?</summary>
+                <p><strong>eFPS (Electronic Filing and Payment System)</strong> is the BIR's online portal for large taxpayers. <strong>eBIRForms</strong> is the software package available to all taxpayers that allows you to prepare and submit tax returns electronically. Most freelancers use eBIRForms.</p>
+              </details>
+
+              <details class="faq-item">
+                <summary>Do I need to issue official receipts to foreign clients?</summary>
+                <p>Technically yes, you are required to issue official receipts for all income received. However, many freelancers working with foreign clients issue unofficial acknowledgment receipts or invoices. To fully comply, register for official receipts through your RDO after completing BIR registration.</p>
+              </details>
+
+              <details class="faq-item">
+                <summary>What about SSS, PhilHealth, and Pag-IBIG?</summary>
+                <p>These are separate from your BIR obligations. As a self-employed individual, you are allowed (and encouraged) to pay voluntary contributions to SSS, PhilHealth, and Pag-IBIG to maintain your social benefits. Contributions are based on your declared monthly income. This calculator does not cover these — focus on BIR obligations first.</p>
+              </details>
+            </div>
+          </section>
+
+        </article>
       </div>
-    </div>
-  </section>
+    </div><!-- /panel-guide -->
 
-  <!-- ─── FOOTER ────────────────────────────────────────── -->
-  <footer class="footer hidden" id="footer">
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer class="footer" id="footer">
     <div class="footer-inner">
       <p class="footer-brand">₱ TaxCalcPH</p>
-      <p class="footer-disclaimer">This calculator is for <strong>informational purposes only</strong> and does not constitute professional tax advice. Always consult a licensed CPA or tax consultant for your specific situation. Tax laws may change — verify with the <a href="https://www.bir.gov.ph" target="_blank" rel="noopener">BIR website</a>.</p>
+      <p class="footer-disclaimer">For informational purposes only. Not professional tax advice. Tax rules change — verify with the <a href="https://www.bir.gov.ph" target="_blank" rel="noopener">BIR website</a> or a licensed CPA.</p>
       <p class="footer-meta">Built for Filipino freelancers &amp; VAs · <span id="footerYear"></span></p>
     </div>
   </footer>
 
-  <!-- ─── MODALS ─────────────────────────────────────────── -->
-  <div class="modal-overlay hidden" id="modalOverlay">
-    <div class="modal" id="modal">
-      <button class="modal-close" id="modalClose">✕</button>
-      <div class="modal-content" id="modalContent"></div>
-    </div>
-  </div>
-
-  <!-- Modal content templates -->
-  <template id="modal8pct">
-    <div class="modal-icon">📊</div>
-    <h2>The 8% Flat Rate</h2>
-    <p>Introduced by TRAIN Law (RA 10963), this option lets you pay a simple <strong>8% of your gross income</strong> in lieu of graduated income tax and percentage tax.</p>
-    <h3>Who can use it?</h3>
-    <ul>
-      <li>Self-employed individuals and professionals</li>
-      <li>Annual gross income does <strong>not exceed ₱3,000,000</strong></li>
-      <li>Not a VAT-registered taxpayer</li>
-    </ul>
-    <h3>Key Benefits</h3>
-    <ul>
-      <li>No need to track expenses for deductions</li>
-      <li>Replaces both income tax AND percentage tax (3%)</li>
-      <li>First ₱250,000 is exempt</li>
-    </ul>
-    <h3>Formula</h3>
-    <div class="modal-formula">(Annual Gross − ₱250,000) × 8%</div>
-    <p class="modal-note">You must elect the 8% rate on your first quarterly return (1701Q) for the year, or on your BIR Form 1901 registration.</p>
-  </template>
-
-  <template id="modalGrad">
-    <div class="modal-icon">📈</div>
-    <h2>The Graduated Income Tax Rate</h2>
-    <p>The traditional tax system where your tax rate increases as your income grows. You deduct expenses first, then apply brackets to what remains.</p>
-    <h3>With 40% OSD (Optional Standard Deduction)</h3>
-    <p>Instead of itemizing every expense, you can deduct <strong>40% of gross income</strong> automatically — no receipts needed.</p>
-    <div class="modal-formula">Net Taxable Income = Gross Income × 60%</div>
-    <h3>2024 Tax Brackets</h3>
-    <table class="modal-table">
-      <thead><tr><th>Net Taxable Income</th><th>Tax Rate</th></tr></thead>
-      <tbody>
-        <tr><td>₱0 – ₱250,000</td><td>0%</td></tr>
-        <tr><td>₱250,001 – ₱400,000</td><td>₱0 + 15% of excess over ₱250k</td></tr>
-        <tr><td>₱400,001 – ₱800,000</td><td>₱22,500 + 20% of excess over ₱400k</td></tr>
-        <tr><td>₱800,001 – ₱2,000,000</td><td>₱102,500 + 25% of excess over ₱800k</td></tr>
-        <tr><td>₱2,000,001 – ₱8,000,000</td><td>₱402,500 + 30% of excess over ₱2M</td></tr>
-        <tr><td>Over ₱8,000,000</td><td>₱2,202,500 + 35% of excess over ₱8M</td></tr>
-      </tbody>
-    </table>
-    <p class="modal-note">Under the graduated rate, you still need to pay 3% percentage tax separately (unless you are VAT-registered).</p>
-  </template>
-
-  <script src="app.js"></script>
 </body>
+<script src="app.js"></script>
 </html>
