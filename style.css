@@ -65,7 +65,7 @@ input, select, textarea { font-family: inherit; }
 .brand {
   font-size: 15px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text);
   white-space: nowrap;
   flex-shrink: 0;
 }
