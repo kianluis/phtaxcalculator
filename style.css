@@ -101,18 +101,18 @@ input, select, textarea { font-family: inherit; }
 .reset-btn {
   margin-left: auto;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-3);
-  padding: 5px 12px;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--text);
+  padding: 6px 14px;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
+  border: 1px solid var(--text);
   transition: all var(--transition);
   white-space: nowrap;
 }
 .reset-btn:hover {
-  color: var(--text);
-  border-color: var(--border-strong);
-  background: var(--bg);
+  background: #374151;
+  border-color: #374151;
 }
 
 /* ─── TAB PANELS ─────────────────────────────────────────── */
