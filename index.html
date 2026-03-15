@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PH Freelancer Tax Calculator — Know What You Owe</title>
+  <meta name="description" content="Free tax calculator for Filipino freelancers and virtual assistants. Compare 8% flat rate vs graduated tax, see quarterly breakdowns, and calculate late filing penalties." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ─── NAV ─────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <span class="nav-logo">₱</span>
+        <span class="nav-name">TaxCalc<span class="nav-ph">PH</span></span>
+      </div>
+      <div class="nav-links" id="navLinks">
+        <a href="#results-section" class="nav-link js-scroll hidden" id="navResults">Results</a>
+        <a href="#late-fees-section" class="nav-link js-scroll hidden" id="navLateFees">Late Fees</a>
+        <a href="#" class="nav-cta js-reset">Reset</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ─── HERO / INPUT ────────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-badge">🇵🇭 Built for Filipino Freelancers & VAs</div>
+      <h1 class="hero-title">Know exactly<br/><span class="hero-gradient-text">what you owe.</span></h1>
+      <p class="hero-subtitle">Enter your monthly income and instantly see your quarterly BIR taxes under both the <strong>8% flat rate</strong> and the <strong>graduated rate</strong> — plus late filing penalties.</p>
+
+      <div class="income-card" id="incomeCard">
+        <div class="income-card-inner">
+          <label class="income-label" for="incomeInput">Monthly Income</label>
+          <div class="income-input-wrap">
+            <span class="income-currency" id="currencySign">₱</span>
+            <input
+              type="text"
+              id="incomeInput"
+              class="income-input"
+              placeholder="0"
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="14"
+            />
+          </div>
+          <p class="income-hint" id="incomeHint">Enter your average gross monthly earnings</p>
+
+          <div class="income-quick-picks">
+            <span class="quick-label">Quick pick:</span>
+            <button class="quick-btn" data-amount="25000">₱25k</button>
+            <button class="quick-btn" data-amount="50000">₱50k</button>
+            <button class="quick-btn" data-amount="100000">₱100k</button>
+            <button class="quick-btn" data-amount="200000">₱200k</button>
+          </div>
+
+          <button class="calculate-btn" id="calculateBtn" disabled>
+            <span class="btn-text">Calculate My Taxes</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="hero-note">No data is stored. All calculations happen in your browser.</p>
+    </div>
+
+    <div class="hero-scroll-indicator" id="scrollIndicator">
+      <span>Scroll to see results</span>
+      <div class="scroll-arrow">↓</div>
+    </div>
+  </section>
+
+  <!-- ─── RESULTS ──────────────────────────────────────── -->
+  <section class="results-section hidden" id="results-section">
+
+    <!-- Annual Summary Bar -->
+    <div class="summary-bar" id="summaryBar">
+      <div class="summary-bar-inner">
+        <div class="summary-item">
+          <span class="summary-label">Annual Income</span>
+          <span class="summary-value" id="summaryAnnual">—</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+          <span class="summary-label">8% Rate Tax</span>
+          <span class="summary-value accent-blue" id="summaryTax8">—</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+          <span class="summary-label">Graduated Tax</span>
+          <span class="summary-value accent-purple" id="summaryTaxGrad">—</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+          <span class="summary-label">You Save With</span>
+          <span class="summary-value accent-green" id="summarySave">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-container">
+      <div class="section-header">
+        <h2 class="section-title">Your Tax Comparison</h2>
+        <p class="section-sub" id="taxYearLabel">Based on current income</p>
+      </div>
+
+      <!-- Rate Cards -->
+      <div class="rate-cards" id="rateCards">
+
+        <!-- 8% Card -->
+        <div class="rate-card" id="card8">
+          <div class="rate-card-header">
+            <div class="rate-badge badge-blue">8% Flat Rate</div>
+            <div class="rate-tag" id="tag8"></div>
+          </div>
+          <div class="rate-tax-amount">
+            <span class="rate-label">Annual Tax</span>
+            <span class="rate-value" id="tax8Annual">₱0</span>
+          </div>
+          <div class="rate-monthly">
+            <span class="rate-monthly-label">Effective monthly set-aside</span>
+            <span class="rate-monthly-value" id="tax8Monthly">₱0/mo</span>
+          </div>
+          <div class="rate-divider"></div>
+          <div class="rate-how">
+            <p class="rate-how-title">How it's computed</p>
+            <div class="rate-formula" id="formula8"></div>
+          </div>
+          <div class="rate-divider"></div>
+          <div class="quarterly-timeline" id="timeline8"></div>
+          <div class="rate-cta">
+            <button class="info-btn" data-modal="modal8pct">Learn about 8% rate →</button>
+          </div>
+        </div>
+
+        <!-- Graduated Card -->
+        <div class="rate-card" id="cardGrad">
+          <div class="rate-card-header">
+            <div class="rate-badge badge-purple">Graduated Rate</div>
+            <div class="rate-tag" id="tagGrad"></div>
+          </div>
+          <div class="rate-tax-amount">
+            <span class="rate-label">Annual Tax</span>
+            <span class="rate-value" id="taxGradAnnual">₱0</span>
+          </div>
+          <div class="rate-monthly">
+            <span class="rate-monthly-label">Effective monthly set-aside</span>
+            <span class="rate-monthly-value" id="taxGradMonthly">₱0/mo</span>
+          </div>
+          <div class="rate-divider"></div>
+          <div class="rate-how">
+            <p class="rate-how-title">How it's computed</p>
+            <div class="rate-formula" id="formulaGrad"></div>
+          </div>
+          <div class="rate-divider"></div>
+          <div class="quarterly-timeline" id="timelineGrad"></div>
+          <div class="rate-cta">
+            <button class="info-btn" data-modal="modalGrad">Learn about graduated rate →</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Recommendation Banner -->
+      <div class="recommendation-banner" id="recommendationBanner">
+        <div class="rec-icon">💡</div>
+        <div class="rec-content">
+          <p class="rec-title" id="recTitle">—</p>
+          <p class="rec-detail" id="recDetail">—</p>
+        </div>
+      </div>
+
+      <!-- Quarterly Schedule -->
+      <div class="quarterly-section">
+        <h3 class="quarterly-title">Quarterly Filing Schedule</h3>
+        <p class="quarterly-sub">When to file and how much to pay each quarter (BIR Form 1701Q)</p>
+        <div class="quarterly-table-wrap">
+          <table class="quarterly-table" id="quarterlyTable">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th class="col-blue">8% Rate</th>
+                <th class="col-purple">Graduated</th>
+              </tr>
+            </thead>
+            <tbody id="quarterlyTableBody"></tbody>
+          </table>
+        </div>
+        <p class="quarterly-note">* Annual ITR (BIR Form 1701) is due April 15 every year. Quarterly payments are credited against your annual tax due.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── LATE FEES ─────────────────────────────────────── -->
+  <section class="late-fees-section hidden" id="late-fees-section">
+    <div class="results-container">
+
+      <div class="section-header">
+        <h2 class="section-title">Late Filing Calculator</h2>
+        <p class="section-sub">Missed a deadline? See exactly how much you owe including BIR penalties.</p>
+      </div>
+
+      <div class="late-fees-grid">
+
+        <div class="late-fees-form card">
+          <h3 class="card-title">Select Filing Period</h3>
+
+          <div class="form-group">
+            <label class="form-label">Which period are you filing for?</label>
+            <select class="form-select" id="latePeriodSelect">
+              <option value="">— Select period —</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="customTaxGroup" style="display:none">
+            <label class="form-label">Tax due for this period (₱)</label>
+            <div class="form-input-wrap">
+              <span class="form-currency">₱</span>
+              <input type="text" class="form-input" id="customTaxInput" placeholder="0" inputmode="numeric" />
+            </div>
+            <p class="form-hint">Pre-filled from your calculation above. You can adjust this.</p>
+          </div>
+
+          <div class="late-period-info card-inner" id="latePeriodInfo" style="display:none">
+            <div class="period-info-row">
+              <span class="info-label">Period</span>
+              <span class="info-value" id="infoPeriod">—</span>
+            </div>
+            <div class="period-info-row">
+              <span class="info-label">Deadline</span>
+              <span class="info-value" id="infoDeadline">—</span>
+            </div>
+            <div class="period-info-row">
+              <span class="info-label">Days Late</span>
+              <span class="info-value accent-red" id="infoDaysLate">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="late-fees-results card" id="lateFeesResult" style="display:none">
+          <h3 class="card-title">Penalty Breakdown</h3>
+
+          <div class="fee-breakdown">
+            <div class="fee-row">
+              <div class="fee-info">
+                <span class="fee-name">Basic Tax Due</span>
+                <span class="fee-desc">Original tax before penalties</span>
+              </div>
+              <span class="fee-amount" id="feeBasicTax">₱0</span>
+            </div>
+            <div class="fee-divider"></div>
+            <div class="fee-row">
+              <div class="fee-info">
+                <span class="fee-name">Surcharge (25%)</span>
+                <span class="fee-desc">One-time penalty for late filing</span>
+              </div>
+              <span class="fee-amount accent-orange" id="feeSurcharge">₱0</span>
+            </div>
+            <div class="fee-row">
+              <div class="fee-info">
+                <span class="fee-name">Interest (12% p.a.)</span>
+                <span class="fee-desc" id="feeInterestDays">0 days × 12% ÷ 365</span>
+              </div>
+              <span class="fee-amount accent-orange" id="feeInterest">₱0</span>
+            </div>
+            <div class="fee-row">
+              <div class="fee-info">
+                <span class="fee-name">Compromise Penalty</span>
+                <span class="fee-desc">BIR administrative penalty</span>
+              </div>
+              <span class="fee-amount accent-orange" id="feeCompromise">₱0</span>
+            </div>
+            <div class="fee-divider"></div>
+            <div class="fee-row fee-total">
+              <div class="fee-info">
+                <span class="fee-name">Total Amount Due</span>
+                <span class="fee-desc">Pay this amount to clear your obligation</span>
+              </div>
+              <span class="fee-amount fee-total-amount" id="feeTotal">₱0</span>
+            </div>
+          </div>
+
+          <div class="late-action-note">
+            <span class="note-icon">⚠️</span>
+            <p>File and pay immediately at any BIR office or via eFPS/eBIRForms to stop further interest from accumulating.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ────────────────────────────────────────── -->
+  <footer class="footer hidden" id="footer">
+    <div class="footer-inner">
+      <p class="footer-brand">₱ TaxCalcPH</p>
+      <p class="footer-disclaimer">This calculator is for <strong>informational purposes only</strong> and does not constitute professional tax advice. Always consult a licensed CPA or tax consultant for your specific situation. Tax laws may change — verify with the <a href="https://www.bir.gov.ph" target="_blank" rel="noopener">BIR website</a>.</p>
+      <p class="footer-meta">Built for Filipino freelancers &amp; VAs · <span id="footerYear"></span></p>
+    </div>
+  </footer>
+
+  <!-- ─── MODALS ─────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Modal content templates -->
+  <template id="modal8pct">
+    <div class="modal-icon">📊</div>
+    <h2>The 8% Flat Rate</h2>
+    <p>Introduced by TRAIN Law (RA 10963), this option lets you pay a simple <strong>8% of your gross income</strong> in lieu of graduated income tax and percentage tax.</p>
+    <h3>Who can use it?</h3>
+    <ul>
+      <li>Self-employed individuals and professionals</li>
+      <li>Annual gross income does <strong>not exceed ₱3,000,000</strong></li>
+      <li>Not a VAT-registered taxpayer</li>
+    </ul>
+    <h3>Key Benefits</h3>
+    <ul>
+      <li>No need to track expenses for deductions</li>
+      <li>Replaces both income tax AND percentage tax (3%)</li>
+      <li>First ₱250,000 is exempt</li>
+    </ul>
+    <h3>Formula</h3>
+    <div class="modal-formula">(Annual Gross − ₱250,000) × 8%</div>
+    <p class="modal-note">You must elect the 8% rate on your first quarterly return (1701Q) for the year, or on your BIR Form 1901 registration.</p>
+  </template>
+
+  <template id="modalGrad">
+    <div class="modal-icon">📈</div>
+    <h2>The Graduated Income Tax Rate</h2>
+    <p>The traditional tax system where your tax rate increases as your income grows. You deduct expenses first, then apply brackets to what remains.</p>
+    <h3>With 40% OSD (Optional Standard Deduction)</h3>
+    <p>Instead of itemizing every expense, you can deduct <strong>40% of gross income</strong> automatically — no receipts needed.</p>
+    <div class="modal-formula">Net Taxable Income = Gross Income × 60%</div>
+    <h3>2024 Tax Brackets</h3>
+    <table class="modal-table">
+      <thead><tr><th>Net Taxable Income</th><th>Tax Rate</th></tr></thead>
+      <tbody>
+        <tr><td>₱0 – ₱250,000</td><td>0%</td></tr>
+        <tr><td>₱250,001 – ₱400,000</td><td>₱0 + 15% of excess over ₱250k</td></tr>
+        <tr><td>₱400,001 – ₱800,000</td><td>₱22,500 + 20% of excess over ₱400k</td></tr>
+        <tr><td>₱800,001 – ₱2,000,000</td><td>₱102,500 + 25% of excess over ₱800k</td></tr>
+        <tr><td>₱2,000,001 – ₱8,000,000</td><td>₱402,500 + 30% of excess over ₱2M</td></tr>
+        <tr><td>Over ₱8,000,000</td><td>₱2,202,500 + 35% of excess over ₱8M</td></tr>
+      </tbody>
+    </table>
+    <p class="modal-note">Under the graduated rate, you still need to pay 3% percentage tax separately (unless you are VAT-registered).</p>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
